@@ -1,35 +1,41 @@
 import React from "react";
-import ForceGraph from "react-force-graph-2d";
+import Graph from "./components/Graph";
+import NodeDrawer from "./components/NodeDrawer";
+import { NodeObject } from "react-force-graph-2d";
 
 interface IAppProps {}
 
 interface IAppState {
-  data: IData;
-}
-
-interface IData {
-  nodes: [{ id: string; group: number }];
-  links: [{ source: string; target: string; value: number }];
+  nodeDrawerOpen: boolean;
+  nodeDrawerContent: string | number;
 }
 
 class App extends React.Component<IAppProps, IAppState> {
   constructor(props: IAppProps) {
     super(props);
-    this.state = { data: {} as IData };
+    this.state = { nodeDrawerOpen: false, nodeDrawerContent: "" };
   }
 
-  public async componentDidMount(): Promise<void> {
-    const mockdata: Response = await fetch("data/mockdata.json");
-    const data: IData = await mockdata.json();
-    this.setState({ data });
-  }
+  private toggleNodeDrawer = () =>
+    this.setState({ nodeDrawerOpen: !this.state.nodeDrawerOpen });
+
+  private assignNodeDrawerContent = (nodeObject: NodeObject) => {
+    this.setState({ nodeDrawerContent: nodeObject.id || "" });
+  };
 
   render() {
     return (
-      <div className="App">
-        {Object.keys(this.state.data).length > 0 && (
-          <ForceGraph graphData={this.state.data} nodeAutoColorBy={"group"} />
-        )}
+      <div className={"App"}>
+        <Graph
+          isNodeDrawerOpen={this.state.nodeDrawerOpen}
+          toggleNodeDrawer={this.toggleNodeDrawer}
+          assignNodeDrawerContent={this.assignNodeDrawerContent}
+        />
+        <NodeDrawer
+          toggleNodeDrawer={this.toggleNodeDrawer}
+          isOpen={this.state.nodeDrawerOpen}
+          content={this.state.nodeDrawerContent}
+        />
       </div>
     );
   }

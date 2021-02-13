@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    { "id": "Myriel", "group": 1 },
+    { "id": "Napoleon", "group": 1 },
+    { "id": "Fauchelevent", "group": 0 },
+    { "id": "MotherInnocent", "group": 0 }
+  ],
+  "links": [
+    { "source": "Napoleon", "target": "Myriel", "distance": 9000 },
+    { "source": "Fauchelevent", "target": "Napoleon", "distance": -20 },
+    {
+      "source": "MotherInnocent",
+      "target": "Fauchelevent",
+      "distance": 1
+    }
+  ]
+}

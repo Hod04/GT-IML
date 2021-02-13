@@ -186,7 +186,7 @@
     { "source": "Woman2", "target": "Javert", "value": 1 },
     { "source": "MotherInnocent", "target": "Fauchelevent", "value": 3 },
     { "source": "MotherInnocent", "target": "Valjean", "value": 1 },
-    { "source": "Gribier", "target": "Fauchelevent", "value": 2 },
+    { "source": "Gribier", "target": "Fauchelevent", "value": 100 },
     { "source": "Mme.Burgon", "target": "Jondrette", "value": 1 },
     { "source": "Gavroche", "target": "Mme.Burgon", "value": 2 },
     { "source": "Gavroche", "target": "Thenardier", "value": 1 },
