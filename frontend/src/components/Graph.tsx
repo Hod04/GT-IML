@@ -1,84 +1,49 @@
 import React from "react";
-import ForceGraph, { NodeObject } from "react-force-graph-2d";
+import * as _ from "lodash";
+import ForceGraph, {
+  ForceGraphMethods,
+  NodeObject,
+} from "react-force-graph-2d";
 import { convexHull } from "../helpers/grahamScan";
+import { GraphSharedTypes } from "../shared/sharedTypes";
 
-interface IGraphProps {
-  toggleNodeDrawer: () => void;
-  isNodeDrawerOpen: boolean;
-  assignNodeDrawerContent: (node: NodeObject) => void;
-}
-
-interface IGraphState {
-  data: IData;
-  groupNodesCoordinations: {
-    [group: number]: {
-      x: number[];
-      y: number[];
-    };
-  };
-  nodeGroups: { [group: number]: number };
-  groupMeanCoordinations: {
-    [group: number]: {
-      x: number;
-      y: number;
-    };
-  };
-}
-
-interface IData {
-  nodes: INode[];
-  links: ILink[];
-}
-
-interface INode {
-  id: string;
-  group: number;
-  x: number;
-  y: number;
-  color: string;
-}
-
-interface ILink {
-  source: string;
-  target: string;
-  value: number;
-}
-
-class Graph extends React.Component<IGraphProps, IGraphState> {
-  constructor(props: IGraphProps) {
+class Graph extends React.Component<
+  GraphSharedTypes.IGraphProps,
+  GraphSharedTypes.IGraphState
+> {
+  constructor(props: GraphSharedTypes.IGraphProps) {
     super(props);
     this.state = {
-      data: {} as IData,
+      data: {} as GraphSharedTypes.IData,
       nodeGroups: {},
-      groupNodesCoordinations: {},
-      groupMeanCoordinations: {},
+      groupConvexHullCoordinations: {},
     };
   }
 
+  private graphRef: React.MutableRefObject<
+    ForceGraphMethods
+  > = React.createRef() as React.MutableRefObject<ForceGraphMethods>;
+
   public async componentDidMount(): Promise<void> {
     const mockdata: Response = await fetch("data/mockdata.json");
-    const data: IData = await mockdata.json();
-    data.nodes.forEach((node) => {
+    const data: GraphSharedTypes.IData = await mockdata.json();
+    this.populateNodeGroupsStateProp(data.nodes);
+    this.setState({ data });
+  }
+
+  private populateNodeGroupsStateProp = (nodes: GraphSharedTypes.INode[]) =>
+    _.each(nodes, (node: GraphSharedTypes.INode) => {
       if (!(node.group in this.state.nodeGroups)) {
         this.setState({
           nodeGroups: { ...this.state.nodeGroups, [node.group]: node.group },
         });
       }
     });
-    this.setState({ data });
-  }
 
-  private assignGroupConvexHullCoordinations = () => {
-    const { nodes } = this.state.data;
+  private getGroupNodeCoordinations = (nodes: GraphSharedTypes.INode[]) => {
+    let groupNodesCoordinations: GraphSharedTypes.IGroupNodeCoordinations = {};
 
-    let groupNodesCoordinations: {
-      [group: number]: {
-        x: number[];
-        y: number[];
-      };
-    } = {};
-
-    nodes.forEach((node) => {
+    _.each(nodes, (node) => {
       if (node.x == null || node.y == null) {
         return;
       }
@@ -101,11 +66,18 @@ class Graph extends React.Component<IGraphProps, IGraphState> {
         };
       }
     });
+    return groupNodesCoordinations;
+  };
 
-    let groupConvexHullCoordinations: {
-      [group: number]: number[][];
-    } = {};
-    Object.keys(groupNodesCoordinations).forEach((group) => {
+  private getGroupConvexHullCoordinations = () => {
+    const { nodes } = this.state.data;
+    const groupNodesCoordinations: GraphSharedTypes.IGroupNodeCoordinations = this.getGroupNodeCoordinations(
+      nodes
+    );
+
+    let groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations = {};
+
+    _.each(_.keys(groupNodesCoordinations), (group) => {
       const groupKey: number = parseInt(group);
       let x: number[] = groupNodesCoordinations[groupKey].x;
       let y: number[] = groupNodesCoordinations[groupKey].y;
@@ -113,14 +85,17 @@ class Graph extends React.Component<IGraphProps, IGraphState> {
 
       groupConvexHullCoordinations[groupKey] = convexHull(s);
     });
+
+    this.setState({ groupConvexHullCoordinations });
     return groupConvexHullCoordinations;
   };
 
   render() {
     return (
       <>
-        {Object.keys(this.state.data).length > 0 && (
+        {!_.isEmpty(this.state.data) && (
           <ForceGraph
+            ref={this.graphRef}
             graphData={this.state.data}
             nodeAutoColorBy={"group"}
             onNodeDragEnd={(node) => {
@@ -128,29 +103,59 @@ class Graph extends React.Component<IGraphProps, IGraphState> {
               node.fy = node.y;
             }}
             linkVisibility={false}
+            warmupTicks={200}
+            cooldownTicks={0}
             onRenderFramePre={(ctx) => {
-              const groupConvexHullCoordinations = this.assignGroupConvexHullCoordinations();
-              Object.values(this.state.nodeGroups).forEach((nodeGroup) => {
+              if (this.graphRef.current != null) {
+                const forceFn:
+                  | GraphSharedTypes.IForceFn
+                  | undefined = this.graphRef.current.d3Force(
+                  "link"
+                ) as GraphSharedTypes.IForceFn;
+                if (forceFn != null) {
+                  forceFn.distance((link: GraphSharedTypes.ILink) => {
+                    const src: GraphSharedTypes.INode = link.source;
+                    const tgt: GraphSharedTypes.INode = link.target;
+                    if (src.group !== tgt.group) {
+                      return 200;
+                    } else {
+                      return 30;
+                    }
+                  });
+                }
+              }
+              let groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations = {};
+              if (
+                _.isEqual(
+                  _.keys(this.state.groupConvexHullCoordinations),
+                  _.keys(this.state.nodeGroups)
+                )
+              ) {
+                groupConvexHullCoordinations = this.state
+                  .groupConvexHullCoordinations;
+              } else {
+                groupConvexHullCoordinations = this.getGroupConvexHullCoordinations();
+              }
+              _.each(_.values(this.state.nodeGroups), (nodeGroup) => {
                 if (
                   groupConvexHullCoordinations != null &&
                   groupConvexHullCoordinations[nodeGroup] != null &&
                   groupConvexHullCoordinations[nodeGroup].length > 0
                 ) {
                   const groupNodeRepresentative:
-                    | INode
-                    | undefined = this.state.data.nodes.find(
+                    | GraphSharedTypes.INode
+                    | undefined = _.find(
+                    this.state.data.nodes,
                     (node) => node.group === nodeGroup
                   );
                   let color: string = "#444";
-                  if (
-                    groupNodeRepresentative != null &&
-                    groupNodeRepresentative
-                  ) {
+                  if (groupNodeRepresentative != null) {
                     color = groupNodeRepresentative.color;
                   }
                   ctx.strokeStyle = color;
                   ctx.beginPath();
-                  groupConvexHullCoordinations[nodeGroup].forEach(
+                  _.each(
+                    groupConvexHullCoordinations[nodeGroup],
                     (group, index) => {
                       if (group == null || group.length < 2) {
                         return;
@@ -160,25 +165,26 @@ class Graph extends React.Component<IGraphProps, IGraphState> {
                           x: [],
                           y: [],
                         };
-                        Object.keys(
-                          groupConvexHullCoordinations[nodeGroup]
-                        ).forEach((node) => {
-                          grp.x = [
-                            ...grp.x,
-                            groupConvexHullCoordinations[nodeGroup][
-                              parseInt(node)
-                            ][0],
-                          ];
-                          grp.y = [
-                            ...grp.y,
-                            groupConvexHullCoordinations[nodeGroup][
-                              parseInt(node)
-                            ][1],
-                          ];
-                        });
+                        _.each(
+                          _.keys(groupConvexHullCoordinations[nodeGroup]),
+                          (node) => {
+                            grp.x = [
+                              ...grp.x,
+                              groupConvexHullCoordinations[nodeGroup][
+                                parseInt(node)
+                              ][0],
+                            ];
+                            grp.y = [
+                              ...grp.y,
+                              groupConvexHullCoordinations[nodeGroup][
+                                parseInt(node)
+                              ][1],
+                            ];
+                          }
+                        );
                         const sum: { x: number; y: number } = {
-                          x: grp.x.reduce((a, b) => a + b, 0),
-                          y: grp.y.reduce((a, b) => a + b, 0),
+                          x: _.reduce(grp.x, (a, b) => a + b, 0),
+                          y: _.reduce(grp.y, (a, b) => a + b, 0),
                         };
                         const groupMean = {
                           x: sum.x / grp.x.length || 0,
@@ -196,6 +202,8 @@ class Graph extends React.Component<IGraphProps, IGraphState> {
                       }
 
                       ctx.lineTo(group[0], group[1]);
+
+                      // draw a line from the last to the first element of the cluster
                       if (
                         index ===
                         groupConvexHullCoordinations[nodeGroup].length - 1
@@ -212,20 +220,14 @@ class Graph extends React.Component<IGraphProps, IGraphState> {
               });
             }}
             nodeCanvasObject={(node, ctx, globalScale) => {
-              const canvasNode = node as NodeObject & { color: string };
-              if (
-                canvasNode == null ||
-                canvasNode.x == null ||
-                canvasNode.y == null ||
-                canvasNode.color == null
-              ) {
-                return;
-              }
-              const label: string = canvasNode.id as string;
+              const canvasNode: GraphSharedTypes.INode = node as GraphSharedTypes.INode;
+
+              const label: string = canvasNode.id;
               const fontSize = 12 / globalScale;
               ctx.font = `${fontSize}px Sans-Serif`;
               const textWidth = ctx.measureText(label).width;
-              const bckgDimensions = [textWidth, fontSize].map(
+              const bckgDimensions = _.map(
+                [textWidth, fontSize],
                 (n) => n + fontSize * 0.2
               ); // some padding
 
