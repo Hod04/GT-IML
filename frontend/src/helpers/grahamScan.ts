@@ -1,35 +1,31 @@
+import * as _ from "lodash";
+
 export function convexHull(data: number[][]) {
-  let upperArr = [],
-    lowerArr = [],
-    clone;
+  let upperArr: number[][] = [],
+    lowerArr: number[][] = [],
+    dataClone: number[][];
 
-  clone = data.slice();
+  dataClone = _.clone(data);
 
-  clone.sort(function (a, b) {
-    return a[0] - b[0];
-  });
+  dataClone.sort((a, b) => a[0] - b[0]);
 
   // calculate the upper hull
-  for (let i = 0; i < clone.length; i++) {
-    let point = clone[i];
-
+  _.forEach(dataClone, (point) => {
     upperArr.push(point);
     removePoints(upperArr);
-  }
+  });
 
   // calculate the lower hull
-  for (let j = clone.length - 1; j >= 0; j--) {
-    let point = clone[j];
-
+  _.forEachRight(dataClone, (point) => {
     lowerArr.push(point);
     removePoints(lowerArr);
-  }
+  });
 
   lowerArr.splice(0, 1);
   lowerArr.splice(lowerArr.length - 1, 1);
 
   // concat hulls
-  return upperArr.concat(lowerArr);
+  return [...upperArr, ...lowerArr];
 }
 
 function removePoints(arr: number[][]) {
