@@ -90,6 +90,121 @@ class Graph extends React.Component<
     return groupConvexHullCoordinations;
   };
 
+  private increaseDistanceBetweenDifferentClusters(d3Graph: ForceGraphMethods) {
+    const forceFn: GraphSharedTypes.IForceFn | undefined = d3Graph.d3Force(
+      "link"
+    ) as GraphSharedTypes.IForceFn;
+
+    if (forceFn != null) {
+      forceFn.distance((link: GraphSharedTypes.ILink) => {
+        const src: GraphSharedTypes.INode = link.source;
+        const tgt: GraphSharedTypes.INode = link.target;
+        if (src.group !== tgt.group) {
+          return 200;
+        } else {
+          return 30;
+        }
+      });
+    }
+  }
+
+  private getGroupColor = (nodeGroup: number) => {
+    const groupNodeRepresentative: GraphSharedTypes.INode | undefined = _.find(
+      this.state.data.nodes,
+      (node) => node.group === nodeGroup
+    );
+    let groupColor: string = "#444";
+
+    if (groupNodeRepresentative != null) {
+      groupColor = groupNodeRepresentative.color;
+    }
+    return groupColor;
+  };
+
+  private drawCircleForClustersWithAtMostTwoElements = (
+    ctx: CanvasRenderingContext2D,
+    groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations,
+    nodeGroup: number
+  ) => {
+    let grp: { x: number[]; y: number[] } = {
+      x: [],
+      y: [],
+    };
+    _.each(_.keys(groupConvexHullCoordinations[nodeGroup]), (node) => {
+      grp.x = [
+        ...grp.x,
+        groupConvexHullCoordinations[nodeGroup][parseInt(node)][0],
+      ];
+      grp.y = [
+        ...grp.y,
+        groupConvexHullCoordinations[nodeGroup][parseInt(node)][1],
+      ];
+    });
+    const sum: { x: number; y: number } = {
+      x: _.reduce(grp.x, (a, b) => a + b, 0),
+      y: _.reduce(grp.y, (a, b) => a + b, 0),
+    };
+    const groupMean = {
+      x: sum.x / grp.x.length || 0,
+      y: sum.y / grp.y.length || 0,
+    };
+    ctx.arc(groupMean.x, groupMean.y, 50, 0, Math.PI * 2, true);
+  };
+
+  private drawClusterHulls = (ctx: CanvasRenderingContext2D) => {
+    let groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations = {};
+
+    // draw the convex hulls exactly once, when component mounts
+    if (
+      _.isEqual(
+        _.keys(this.state.groupConvexHullCoordinations),
+        _.keys(this.state.nodeGroups)
+      )
+    ) {
+      groupConvexHullCoordinations = this.state.groupConvexHullCoordinations;
+    } else {
+      groupConvexHullCoordinations = this.getGroupConvexHullCoordinations();
+    }
+
+    _.each(_.values(this.state.nodeGroups), (nodeGroup) => {
+      if (
+        groupConvexHullCoordinations != null &&
+        groupConvexHullCoordinations[nodeGroup] != null &&
+        groupConvexHullCoordinations[nodeGroup].length > 0
+      ) {
+        ctx.strokeStyle = this.getGroupColor(nodeGroup);
+        ctx.beginPath();
+
+        _.each(groupConvexHullCoordinations[nodeGroup], (group, index) => {
+          if (group == null || group.length < 2) {
+            return;
+          }
+
+          if (groupConvexHullCoordinations[nodeGroup].length <= 2) {
+            this.drawCircleForClustersWithAtMostTwoElements(
+              ctx,
+              groupConvexHullCoordinations,
+              nodeGroup
+            );
+            return;
+          }
+
+          ctx.lineTo(group[0], group[1]);
+
+          // draw a line from the last to the first element of the cluster
+          if (index === groupConvexHullCoordinations[nodeGroup].length - 1) {
+            ctx.lineTo(
+              groupConvexHullCoordinations[nodeGroup][0][0],
+              groupConvexHullCoordinations[nodeGroup][0][1]
+            );
+          }
+        });
+
+        ctx.stroke();
+      }
+    });
+  };
+
   render() {
     return (
       <>
@@ -107,132 +222,24 @@ class Graph extends React.Component<
             cooldownTicks={0}
             onRenderFramePre={(ctx) => {
               if (this.graphRef.current != null) {
-                const forceFn:
-                  | GraphSharedTypes.IForceFn
-                  | undefined = this.graphRef.current.d3Force(
-                  "link"
-                ) as GraphSharedTypes.IForceFn;
-                if (forceFn != null) {
-                  forceFn.distance((link: GraphSharedTypes.ILink) => {
-                    const src: GraphSharedTypes.INode = link.source;
-                    const tgt: GraphSharedTypes.INode = link.target;
-                    if (src.group !== tgt.group) {
-                      return 200;
-                    } else {
-                      return 30;
-                    }
-                  });
-                }
+                this.increaseDistanceBetweenDifferentClusters(
+                  this.graphRef.current
+                );
               }
-              let groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations = {};
-              if (
-                _.isEqual(
-                  _.keys(this.state.groupConvexHullCoordinations),
-                  _.keys(this.state.nodeGroups)
-                )
-              ) {
-                groupConvexHullCoordinations = this.state
-                  .groupConvexHullCoordinations;
-              } else {
-                groupConvexHullCoordinations = this.getGroupConvexHullCoordinations();
-              }
-              _.each(_.values(this.state.nodeGroups), (nodeGroup) => {
-                if (
-                  groupConvexHullCoordinations != null &&
-                  groupConvexHullCoordinations[nodeGroup] != null &&
-                  groupConvexHullCoordinations[nodeGroup].length > 0
-                ) {
-                  const groupNodeRepresentative:
-                    | GraphSharedTypes.INode
-                    | undefined = _.find(
-                    this.state.data.nodes,
-                    (node) => node.group === nodeGroup
-                  );
-                  let color: string = "#444";
-                  if (groupNodeRepresentative != null) {
-                    color = groupNodeRepresentative.color;
-                  }
-                  ctx.strokeStyle = color;
-                  ctx.beginPath();
-                  _.each(
-                    groupConvexHullCoordinations[nodeGroup],
-                    (group, index) => {
-                      if (group == null || group.length < 2) {
-                        return;
-                      }
-                      if (groupConvexHullCoordinations[nodeGroup].length <= 2) {
-                        let grp: { x: number[]; y: number[] } = {
-                          x: [],
-                          y: [],
-                        };
-                        _.each(
-                          _.keys(groupConvexHullCoordinations[nodeGroup]),
-                          (node) => {
-                            grp.x = [
-                              ...grp.x,
-                              groupConvexHullCoordinations[nodeGroup][
-                                parseInt(node)
-                              ][0],
-                            ];
-                            grp.y = [
-                              ...grp.y,
-                              groupConvexHullCoordinations[nodeGroup][
-                                parseInt(node)
-                              ][1],
-                            ];
-                          }
-                        );
-                        const sum: { x: number; y: number } = {
-                          x: _.reduce(grp.x, (a, b) => a + b, 0),
-                          y: _.reduce(grp.y, (a, b) => a + b, 0),
-                        };
-                        const groupMean = {
-                          x: sum.x / grp.x.length || 0,
-                          y: sum.y / grp.y.length || 0,
-                        };
-                        ctx.arc(
-                          groupMean.x,
-                          groupMean.y,
-                          50,
-                          0,
-                          Math.PI * 2,
-                          true
-                        ); // Outer circle for <= 2 node cluster
-                        return;
-                      }
-
-                      ctx.lineTo(group[0], group[1]);
-
-                      // draw a line from the last to the first element of the cluster
-                      if (
-                        index ===
-                        groupConvexHullCoordinations[nodeGroup].length - 1
-                      ) {
-                        ctx.lineTo(
-                          groupConvexHullCoordinations[nodeGroup][0][0],
-                          groupConvexHullCoordinations[nodeGroup][0][1]
-                        );
-                      }
-                    }
-                  );
-                  ctx.stroke();
-                }
-              });
+              this.drawClusterHulls(ctx);
             }}
             nodeCanvasObject={(node, ctx, globalScale) => {
               const canvasNode: GraphSharedTypes.INode = node as GraphSharedTypes.INode;
-
               const label: string = canvasNode.id;
               const fontSize = 12 / globalScale;
-              ctx.font = `${fontSize}px Sans-Serif`;
               const textWidth = ctx.measureText(label).width;
               const bckgDimensions = _.map(
                 [textWidth, fontSize],
                 (n) => n + fontSize * 0.2
-              ); // some padding
+              );
 
               ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-
+              ctx.font = `${fontSize}px Sans-Serif`;
               ctx.fillRect(
                 canvasNode.x - bckgDimensions[0] / 2,
                 canvasNode.y - bckgDimensions[1] / 2,
