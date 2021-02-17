@@ -4,14 +4,8 @@ import { SharedTypes } from "../shared/sharedTypes";
 import "../styles/NodeDrawer.css";
 
 export default class NodeDrawer extends React.Component<
-  SharedTypes.NodeDrawer.INodeDrawerProps,
-  SharedTypes.NodeDrawer.INodeDrawerState
+  SharedTypes.NodeDrawer.INodeDrawerProps
 > {
-  constructor(props: SharedTypes.NodeDrawer.INodeDrawerProps) {
-    super(props);
-    this.state = {};
-  }
-
   render() {
     return (
       <Drawer

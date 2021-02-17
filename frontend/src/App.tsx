@@ -2,16 +2,10 @@ import React from "react";
 import Graph from "./components/Graph";
 import NodeDrawer from "./components/NodeDrawer";
 import { NodeObject } from "react-force-graph-2d";
+import { SharedTypes } from "./shared/sharedTypes";
 
-interface IAppProps {}
-
-interface IAppState {
-  nodeDrawerOpen: boolean;
-  nodeDrawerContent: string | number;
-}
-
-class App extends React.Component<IAppProps, IAppState> {
-  constructor(props: IAppProps) {
+class App extends React.Component<{}, SharedTypes.App.IAppState> {
+  constructor(props: {}) {
     super(props);
     this.state = { nodeDrawerOpen: false, nodeDrawerContent: "" };
   }

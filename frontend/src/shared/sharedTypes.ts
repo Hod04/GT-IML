@@ -1,6 +1,13 @@
 import { NodeObject } from "react-force-graph-2d";
 
 export namespace SharedTypes {
+  export namespace App {
+    export interface IAppState {
+      nodeDrawerOpen: boolean;
+      nodeDrawerContent: string | number;
+    }
+  }
+
   export namespace Graph {
     export interface IGraphProps {
       toggleNodeDrawer: () => void;
@@ -57,7 +64,5 @@ export namespace SharedTypes {
       toggleNodeDrawer: () => void;
       content: string | number;
     }
-
-    export interface INodeDrawerState {}
   }
 }
