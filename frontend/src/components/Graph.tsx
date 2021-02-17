@@ -5,16 +5,16 @@ import ForceGraph, {
   NodeObject,
 } from "react-force-graph-2d";
 import { convexHull } from "../helpers/grahamScan";
-import { GraphSharedTypes } from "../shared/sharedTypes";
+import { SharedTypes } from "../shared/sharedTypes";
 
 class Graph extends React.Component<
-  GraphSharedTypes.IGraphProps,
-  GraphSharedTypes.IGraphState
+  SharedTypes.Graph.IGraphProps,
+  SharedTypes.Graph.IGraphState
 > {
-  constructor(props: GraphSharedTypes.IGraphProps) {
+  constructor(props: SharedTypes.Graph.IGraphProps) {
     super(props);
     this.state = {
-      data: {} as GraphSharedTypes.IData,
+      data: {} as SharedTypes.Graph.IData,
       nodeGroups: {},
       groupConvexHullCoordinations: {},
     };
@@ -26,13 +26,13 @@ class Graph extends React.Component<
 
   public async componentDidMount(): Promise<void> {
     const mockdata: Response = await fetch("data/mockdata.json");
-    const data: GraphSharedTypes.IData = await mockdata.json();
+    const data: SharedTypes.Graph.IData = await mockdata.json();
     this.populateNodeGroupsStateProp(data.nodes);
     this.setState({ data });
   }
 
-  private populateNodeGroupsStateProp = (nodes: GraphSharedTypes.INode[]) =>
-    _.each(nodes, (node: GraphSharedTypes.INode) => {
+  private populateNodeGroupsStateProp = (nodes: SharedTypes.Graph.INode[]) =>
+    _.each(nodes, (node: SharedTypes.Graph.INode) => {
       if (!(node.group in this.state.nodeGroups)) {
         this.setState({
           nodeGroups: { ...this.state.nodeGroups, [node.group]: node.group },
@@ -40,8 +40,8 @@ class Graph extends React.Component<
       }
     });
 
-  private getGroupNodeCoordinations = (nodes: GraphSharedTypes.INode[]) => {
-    let groupNodesCoordinations: GraphSharedTypes.IGroupNodeCoordinations = {};
+  private getGroupNodeCoordinations = (nodes: SharedTypes.Graph.INode[]) => {
+    let groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = {};
 
     _.each(nodes, (node) => {
       if (node.x == null || node.y == null) {
@@ -71,11 +71,11 @@ class Graph extends React.Component<
 
   private getGroupConvexHullCoordinations = () => {
     const { nodes } = this.state.data;
-    const groupNodesCoordinations: GraphSharedTypes.IGroupNodeCoordinations = this.getGroupNodeCoordinations(
+    const groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = this.getGroupNodeCoordinations(
       nodes
     );
 
-    let groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations = {};
+    let groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations = {};
 
     _.each(_.keys(groupNodesCoordinations), (group) => {
       const groupKey: number = parseInt(group);
@@ -91,14 +91,14 @@ class Graph extends React.Component<
   };
 
   private increaseDistanceBetweenDifferentClusters(d3Graph: ForceGraphMethods) {
-    const forceFn: GraphSharedTypes.IForceFn | undefined = d3Graph.d3Force(
+    const forceFn: SharedTypes.Graph.IForceFn | undefined = d3Graph.d3Force(
       "link"
-    ) as GraphSharedTypes.IForceFn;
+    ) as SharedTypes.Graph.IForceFn;
 
     if (forceFn != null) {
-      forceFn.distance((link: GraphSharedTypes.ILink) => {
-        const src: GraphSharedTypes.INode = link.source;
-        const tgt: GraphSharedTypes.INode = link.target;
+      forceFn.distance((link: SharedTypes.Graph.ILink) => {
+        const src: SharedTypes.Graph.INode = link.source;
+        const tgt: SharedTypes.Graph.INode = link.target;
         if (src.group !== tgt.group) {
           return 200;
         } else {
@@ -109,7 +109,7 @@ class Graph extends React.Component<
   }
 
   private getGroupColor = (nodeGroup: number) => {
-    const groupNodeRepresentative: GraphSharedTypes.INode | undefined = _.find(
+    const groupNodeRepresentative: SharedTypes.Graph.INode | undefined = _.find(
       this.state.data.nodes,
       (node) => node.group === nodeGroup
     );
@@ -123,7 +123,7 @@ class Graph extends React.Component<
 
   private drawCircleForClustersWithAtMostTwoElements = (
     ctx: CanvasRenderingContext2D,
-    groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations,
+    groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations,
     nodeGroup: number
   ) => {
     let grp: { x: number[]; y: number[] } = {
@@ -152,7 +152,7 @@ class Graph extends React.Component<
   };
 
   private drawClusterHulls = (ctx: CanvasRenderingContext2D) => {
-    let groupConvexHullCoordinations: GraphSharedTypes.IGroupConvexHullCoordinations = {};
+    let groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations = {};
 
     // draw the convex hulls exactly once, when component mounts
     if (
@@ -229,7 +229,7 @@ class Graph extends React.Component<
               this.drawClusterHulls(ctx);
             }}
             nodeCanvasObject={(node, ctx, globalScale) => {
-              const canvasNode: GraphSharedTypes.INode = node as GraphSharedTypes.INode;
+              const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               const label: string = canvasNode.id;
               const fontSize = 12 / globalScale;
               const textWidth = ctx.measureText(label).width;
