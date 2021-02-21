@@ -7,6 +7,7 @@ import ForceGraph, {
 import { convexHull } from "../helpers/grahamScan";
 import { SharedTypes } from "../shared/sharedTypes";
 import { pointInPolygon } from "../helpers/rayCasting";
+import { pointInArc } from "../helpers/pointInArc";
 import {
   CANVAS_ARC_ANTICLOCKWISE,
   CANVAS_ARC_END_ANGLE,
@@ -68,10 +69,9 @@ class Graph extends React.Component<
     if (newlyAssignedNode != null) {
       // assign the newly assigned node its new group & corresponding color
       newlyAssignedNode.group = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
-      newlyAssignedNode.color =
-        this.getGroupNodeRepresentative(
-          this.state.nodeWithNewlyAssignedCluster!.newGroupKey
-        )?.color || DEFAULT_NODE_COLOR;
+      newlyAssignedNode.color = this.getGroupColor(
+        this.state.nodeWithNewlyAssignedCluster!.newGroupKey
+      );
 
       dataClone.nodes.splice(newlyAssignedNode.index, 1, {
         ...this.state.nodeWithNewlyAssignedCluster!.node,
@@ -176,9 +176,20 @@ class Graph extends React.Component<
       const groupKey: number = parseInt(group);
       let x: number[] = groupNodesCoordinations[groupKey].x;
       let y: number[] = groupNodesCoordinations[groupKey].y;
-      const s: number[][] = x.map((xElem, index) => [xElem, y[index]]);
+      const groupCoordinations: number[][] = x.map((xElem, index) => [
+        xElem,
+        y[index],
+      ]);
 
-      groupConvexHullCoordinations[groupKey] = convexHull(s);
+      if (groupCoordinations.length <= 2) {
+        const s = this.getArcCenterForClustersWithAtMostTwoElements(
+          groupCoordinations
+        );
+
+        groupConvexHullCoordinations[groupKey] = [[s.x, s.y]];
+      } else {
+        groupConvexHullCoordinations[groupKey] = convexHull(groupCoordinations);
+      }
     });
 
     this.setState({ groupConvexHullCoordinations });
@@ -209,54 +220,73 @@ class Graph extends React.Component<
     chargeFn?.distanceMax(FORCE_CHARGE_MAX_DISTANCE);
   };
 
-  private getGroupNodeRepresentative = (
-    group: number
-  ): SharedTypes.Graph.INode | undefined =>
-    _.find(this.state.data.nodes, (node) => node.group === group);
-
-  private getGroupColor = (nodeGroup: number): string => {
-    const groupNodeRepresentative:
-      | SharedTypes.Graph.INode
-      | undefined = this.getGroupNodeRepresentative(nodeGroup);
-
-    let groupColor: string = DEFAULT_NODE_COLOR;
-
-    if (groupNodeRepresentative != null) {
-      groupColor = groupNodeRepresentative.color;
-    }
-    return groupColor;
+  private getGroupColor = (nodeGroup: number) => {
+    let mostProminantColor: string = DEFAULT_NODE_COLOR;
+    let nodeColorDictionary: { [nodeColor: string]: number } = {
+      [DEFAULT_NODE_COLOR]: 1,
+    };
+    const nodes: SharedTypes.Graph.INode[] = _.filter(
+      this.state.data.nodes,
+      (node) => node.group === nodeGroup
+    );
+    _.each(nodes, (node) => {
+      if (node.color in nodeColorDictionary) {
+        nodeColorDictionary[node.color] += 1;
+      } else {
+        nodeColorDictionary[node.color] = 1;
+      }
+      if (
+        nodeColorDictionary[node.color] >=
+        nodeColorDictionary[mostProminantColor]
+      ) {
+        mostProminantColor = node.color;
+      }
+    });
+    return mostProminantColor;
   };
 
-  private drawCircleForClustersWithAtMostTwoElements = (
-    ctx: CanvasRenderingContext2D,
-    groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations,
-    nodeGroup: number
-  ): void => {
+  private getArcCenterForClustersWithAtMostTwoElements = (
+    groupCoordinations: number[][]
+  ): { x: number; y: number } => {
     let grp: { x: number[]; y: number[] } = {
       x: [],
       y: [],
     };
-    _.each(_.keys(groupConvexHullCoordinations[nodeGroup]), (node) => {
-      grp.x = [
-        ...grp.x,
-        groupConvexHullCoordinations[nodeGroup][parseInt(node)][0],
-      ];
-      grp.y = [
-        ...grp.y,
-        groupConvexHullCoordinations[nodeGroup][parseInt(node)][1],
-      ];
+
+    _.each(_.keys(groupCoordinations), (node) => {
+      grp.x = [...grp.x, groupCoordinations[parseInt(node)][0]];
+      grp.y = [...grp.y, groupCoordinations[parseInt(node)][1]];
     });
+
     const sum: { x: number; y: number } = {
       x: _.reduce(grp.x, (a, b) => a + b, 0),
       y: _.reduce(grp.y, (a, b) => a + b, 0),
     };
-    const groupMean = {
+
+    const arcCenter: { x: number; y: number } = {
       x: sum.x / grp.x.length || 0,
       y: sum.y / grp.y.length || 0,
     };
+
+    return arcCenter;
+  };
+
+  private drawArcForClustersWithAtMostTwoElements = (
+    ctx: CanvasRenderingContext2D,
+    groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations,
+    nodeGroup: number
+  ): void => {
+    const groupCoordinations: number[][] =
+      groupConvexHullCoordinations[nodeGroup];
+
+    const arcCenter: {
+      x: number;
+      y: number;
+    } = { x: groupCoordinations[0][0], y: groupCoordinations[0][1] };
+
     ctx.arc(
-      groupMean.x,
-      groupMean.y,
+      arcCenter.x,
+      arcCenter.y,
       CANVAS_ARC_RADIUS,
       CANVAS_ARC_START_ANGLE,
       CANVAS_ARC_END_ANGLE,
@@ -274,7 +304,7 @@ class Graph extends React.Component<
         _.keys(this.state.groupConvexHullCoordinations),
         _.keys(this.state.nodeGroups)
       ) &&
-      this.state.renderCounter > 2
+      this.state.renderCounter > 5
     ) {
       groupConvexHullCoordinations = this.state.groupConvexHullCoordinations;
     } else {
@@ -298,7 +328,7 @@ class Graph extends React.Component<
           }
 
           if (groupConvexHullCoordinations[nodeGroup].length <= 2) {
-            this.drawCircleForClustersWithAtMostTwoElements(
+            this.drawArcForClustersWithAtMostTwoElements(
               ctx,
               groupConvexHullCoordinations,
               nodeGroup
@@ -335,7 +365,18 @@ class Graph extends React.Component<
   ): void {
     const newGroup: number[][] | undefined = _.find(
       this.state.groupConvexHullCoordinations,
-      (convexHull) => pointInPolygon([canvasNode.x, canvasNode.y], convexHull)
+      (convexHull) => {
+        if (convexHull.length === 1) {
+          return pointInArc(
+            canvasNode.x,
+            canvasNode.y,
+            convexHull[0][0],
+            convexHull[0][1],
+            CANVAS_ARC_RADIUS
+          );
+        }
+        return pointInPolygon([canvasNode.x, canvasNode.y], convexHull);
+      }
     );
 
     if (newGroup == null) {

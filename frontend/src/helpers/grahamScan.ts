@@ -1,6 +1,6 @@
 import * as _ from "lodash";
 
-export function convexHull(data: number[][]) {
+export function convexHull(data: number[][]): number[][] {
   let upperArr: number[][] = [],
     lowerArr: number[][] = [],
     dataClone: number[][];
