@@ -59,7 +59,7 @@ class Graph extends React.Component<
     }
   }
 
-  private handleNodeClusterMembershipChange = () => {
+  private handleNodeClusterMembershipChange = (): void => {
     let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
     const newlyAssignedNode: SharedTypes.Graph.INode | undefined = _.find(
       dataClone.nodes,
