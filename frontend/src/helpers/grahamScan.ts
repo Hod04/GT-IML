@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
 export function convexHull(data: number[][]): number[][] {
   let upperArr: number[][] = [],

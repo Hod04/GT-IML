@@ -1,5 +1,5 @@
 import React from "react";
-import * as _ from "lodash";
+import _ from "lodash";
 import ForceGraph, {
   ForceGraphMethods,
   NodeObject,
@@ -13,7 +13,6 @@ import {
   CANVAS_ARC_END_ANGLE,
   CANVAS_ARC_RADIUS,
   CANVAS_ARC_START_ANGLE,
-  DEFAULT_NODE_COLOR,
   FORCE_CHARGE_MAX_DISTANCE,
   FORCE_GRAPH_WARM_UP_TICKS,
   FORCE_LINK_DIFFERENT_GROUP_DISTANCE,
@@ -21,6 +20,12 @@ import {
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
 } from "../helpers/constants";
+import {
+  generateLinks,
+  getArcCenterForClustersWithAtMostTwoElements,
+  getGroupColor,
+  getGroupNodeCoordinations,
+} from "../helpers/graphHelpers/graphHelpers";
 
 class Graph extends React.Component<
   SharedTypes.Graph.IGraphProps,
@@ -43,7 +48,10 @@ class Graph extends React.Component<
     const data: SharedTypes.Graph.IData = await mockdata.json();
     this.populateNodeGroupsStateProp(data.nodes);
     this.setState({
-      data: { nodes: data.nodes, links: this.generateLinks(data.nodes) },
+      data: {
+        nodes: data.nodes,
+        links: generateLinks(data.nodes, this.state.nodeGroups),
+      },
     });
   }
 
@@ -69,7 +77,8 @@ class Graph extends React.Component<
     if (newlyAssignedNode != null) {
       // assign the newly assigned node its new group & corresponding color
       newlyAssignedNode.group = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
-      newlyAssignedNode.color = this.getGroupColor(
+      newlyAssignedNode.color = getGroupColor(
+        this.state.data.nodes,
         this.state.nodeWithNewlyAssignedCluster!.newGroupKey
       );
 
@@ -78,7 +87,7 @@ class Graph extends React.Component<
         group: this.state.nodeWithNewlyAssignedCluster!.newGroupKey,
       });
 
-      dataClone.links = this.generateLinks(dataClone.nodes);
+      dataClone.links = generateLinks(dataClone.nodes, this.state.nodeGroups);
       this.setState({
         renderCounter: 0,
         nodeWithNewlyAssignedCluster: undefined,
@@ -88,38 +97,6 @@ class Graph extends React.Component<
       });
     }
   };
-
-  private interconnectClusterMembers(
-    nodes: SharedTypes.Graph.INode[]
-  ): SharedTypes.Graph.ILink[] {
-    let interconnectedLinks: SharedTypes.Graph.ILink[] = [];
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        interconnectedLinks.push({
-          source: nodes[i],
-          target: nodes[j],
-          value: 0,
-        });
-      }
-    }
-    return interconnectedLinks;
-  }
-
-  private generateLinks(
-    nodes: SharedTypes.Graph.INode[]
-  ): SharedTypes.Graph.ILink[] {
-    let links: SharedTypes.Graph.ILink[] = [];
-    _.each(_.values(this.state.nodeGroups), (group) => {
-      const nodeGroupA: SharedTypes.Graph.INode[] | undefined = _.filter(
-        nodes,
-        (node) => node.group === group
-      );
-      if (nodeGroupA != null) {
-        links = [...links, ...this.interconnectClusterMembers(nodeGroupA)];
-      }
-    });
-    return links;
-  }
 
   private populateNodeGroupsStateProp = (
     nodes: SharedTypes.Graph.INode[]
@@ -133,40 +110,9 @@ class Graph extends React.Component<
     });
   };
 
-  private getGroupNodeCoordinations = (
-    nodes: SharedTypes.Graph.INode[]
-  ): SharedTypes.Graph.IGroupNodeCoordinations => {
-    let groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = {};
-
-    _.each(nodes, (node) => {
-      if (node.x == null || node.y == null) {
-        return;
-      }
-
-      if (!(node.group in groupNodesCoordinations)) {
-        groupNodesCoordinations = {
-          ...groupNodesCoordinations,
-          [node.group]: {
-            x: [node.x],
-            y: [node.y],
-          },
-        };
-      } else {
-        groupNodesCoordinations = {
-          ...groupNodesCoordinations,
-          [node.group]: {
-            x: [...groupNodesCoordinations[node.group].x, node.x],
-            y: [...groupNodesCoordinations[node.group].y, node.y],
-          },
-        };
-      }
-    });
-    return groupNodesCoordinations;
-  };
-
   private getGroupConvexHullCoordinations = (): SharedTypes.Graph.IGroupConvexHullCoordinations => {
     const { nodes } = this.state.data;
-    const groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = this.getGroupNodeCoordinations(
+    const groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = getGroupNodeCoordinations(
       nodes
     );
 
@@ -182,11 +128,12 @@ class Graph extends React.Component<
       ]);
 
       if (groupCoordinations.length <= 2) {
-        const s = this.getArcCenterForClustersWithAtMostTwoElements(
-          groupCoordinations
-        );
+        const arcCenter: {
+          x: number;
+          y: number;
+        } = getArcCenterForClustersWithAtMostTwoElements(groupCoordinations);
 
-        groupConvexHullCoordinations[groupKey] = [[s.x, s.y]];
+        groupConvexHullCoordinations[groupKey] = [[arcCenter.x, arcCenter.y]];
       } else {
         groupConvexHullCoordinations[groupKey] = convexHull(groupCoordinations);
       }
@@ -218,57 +165,6 @@ class Graph extends React.Component<
     ) as SharedTypes.Graph.IForceFn;
 
     chargeFn?.distanceMax(FORCE_CHARGE_MAX_DISTANCE);
-  };
-
-  private getGroupColor = (nodeGroup: number) => {
-    let mostProminantColor: string = DEFAULT_NODE_COLOR;
-    let nodeColorDictionary: { [nodeColor: string]: number } = {
-      [DEFAULT_NODE_COLOR]: 1,
-    };
-    const nodes: SharedTypes.Graph.INode[] = _.filter(
-      this.state.data.nodes,
-      (node) => node.group === nodeGroup
-    );
-    _.each(nodes, (node) => {
-      if (node.color in nodeColorDictionary) {
-        nodeColorDictionary[node.color] += 1;
-      } else {
-        nodeColorDictionary[node.color] = 1;
-      }
-      if (
-        nodeColorDictionary[node.color] >=
-        nodeColorDictionary[mostProminantColor]
-      ) {
-        mostProminantColor = node.color;
-      }
-    });
-    return mostProminantColor;
-  };
-
-  private getArcCenterForClustersWithAtMostTwoElements = (
-    groupCoordinations: number[][]
-  ): { x: number; y: number } => {
-    let grp: { x: number[]; y: number[] } = {
-      x: [],
-      y: [],
-    };
-
-    _.each(_.keys(groupCoordinations), (node) => {
-      grp.x = [...grp.x, groupCoordinations[parseInt(node)][0]];
-      grp.y = [...grp.y, groupCoordinations[parseInt(node)][1]];
-    });
-
-    const sum: { x: number; y: number } = {
-      x: _.reduce(grp.x, (a, b) => a + b, 0),
-      y: _.reduce(grp.y, (a, b) => a + b, 0),
-    };
-
-    const arcCenter: { x: number; y: number } = {
-      x: sum.x / grp.x.length || 0,
-      y: sum.y / grp.y.length || 0,
-    };
-
-    return arcCenter;
   };
 
   private drawArcForClustersWithAtMostTwoElements = (
@@ -319,7 +215,7 @@ class Graph extends React.Component<
         groupConvexHullCoordinations[nodeGroup] != null &&
         groupConvexHullCoordinations[nodeGroup].length > 0
       ) {
-        ctx.strokeStyle = this.getGroupColor(nodeGroup);
+        ctx.strokeStyle = getGroupColor(this.state.data.nodes, nodeGroup);
         ctx.beginPath();
 
         _.each(groupConvexHullCoordinations[nodeGroup], (group, index) => {

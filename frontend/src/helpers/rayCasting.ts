@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 
 export function pointInPolygon(point: (number | undefined)[], vs: number[][]) {
   if (_.some(point, (coord) => coord == null)) {
