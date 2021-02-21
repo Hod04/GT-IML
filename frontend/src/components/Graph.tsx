@@ -6,6 +6,20 @@ import ForceGraph, {
 } from "react-force-graph-2d";
 import { convexHull } from "../helpers/grahamScan";
 import { SharedTypes } from "../shared/sharedTypes";
+import { pointInPolygon } from "../helpers/rayCasting";
+import {
+  CANVAS_ARC_ANTICLOCKWISE,
+  CANVAS_ARC_END_ANGLE,
+  CANVAS_ARC_RADIUS,
+  CANVAS_ARC_START_ANGLE,
+  DEFAULT_NODE_COLOR,
+  FORCE_CHARGE_MAX_DISTANCE,
+  FORCE_GRAPH_WARM_UP_TICKS,
+  FORCE_LINK_DIFFERENT_GROUP_DISTANCE,
+  FORCE_LINK_SAME_GROUP_DISTANCE,
+  ZOOM_TO_FIT_DURATION,
+  ZOOM_TO_FIT_PADDING,
+} from "../helpers/constants";
 
 class Graph extends React.Component<
   SharedTypes.Graph.IGraphProps,
@@ -14,24 +28,102 @@ class Graph extends React.Component<
   constructor(props: SharedTypes.Graph.IGraphProps) {
     super(props);
     this.state = {
+      renderCounter: 0,
       data: {} as SharedTypes.Graph.IData,
       nodeGroups: {},
       groupConvexHullCoordinations: {},
     };
   }
 
-  private graphRef: React.MutableRefObject<
-    ForceGraphMethods
-  > = React.createRef() as React.MutableRefObject<ForceGraphMethods>;
+  private graphRef: React.MutableRefObject<ForceGraphMethods> = React.createRef() as React.MutableRefObject<ForceGraphMethods>;
 
   public async componentDidMount(): Promise<void> {
     const mockdata: Response = await fetch("data/mockdata.json");
     const data: SharedTypes.Graph.IData = await mockdata.json();
     this.populateNodeGroupsStateProp(data.nodes);
-    this.setState({ data });
+    this.setState({
+      data: { nodes: data.nodes, links: this.generateLinks(data.nodes) },
+    });
   }
 
-  private populateNodeGroupsStateProp = (nodes: SharedTypes.Graph.INode[]) =>
+  public componentDidUpdate(
+    prevProps: SharedTypes.Graph.IGraphProps,
+    prevState: SharedTypes.Graph.IGraphState
+  ): void {
+    if (this.state.nodeWithNewlyAssignedCluster != null) {
+      this.handleNodeClusterMembershipChange();
+    }
+
+    if (!_.isEqual(prevState.nodeGroups, this.state.nodeGroups)) {
+      this.populateNodeGroupsStateProp(this.state.data.nodes);
+    }
+  }
+
+  private handleNodeClusterMembershipChange = () => {
+    let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
+    const newlyAssignedNode: SharedTypes.Graph.INode | undefined = _.find(
+      dataClone.nodes,
+      (node) => node.id === this.state.nodeWithNewlyAssignedCluster!.node.id
+    );
+    if (newlyAssignedNode != null) {
+      // assign the newly assigned node its new group & corresponding color
+      newlyAssignedNode.group = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
+      newlyAssignedNode.color =
+        this.getGroupNodeRepresentative(
+          this.state.nodeWithNewlyAssignedCluster!.newGroupKey
+        )?.color || DEFAULT_NODE_COLOR;
+
+      dataClone.nodes.splice(newlyAssignedNode.index, 1, {
+        ...this.state.nodeWithNewlyAssignedCluster!.node,
+        group: this.state.nodeWithNewlyAssignedCluster!.newGroupKey,
+      });
+
+      dataClone.links = this.generateLinks(dataClone.nodes);
+      this.setState({
+        renderCounter: 0,
+        nodeWithNewlyAssignedCluster: undefined,
+        groupConvexHullCoordinations: {},
+        nodeGroups: {},
+        data: dataClone,
+      });
+    }
+  };
+
+  private interconnectClusterMembers(
+    nodes: SharedTypes.Graph.INode[]
+  ): SharedTypes.Graph.ILink[] {
+    let interconnectedLinks: SharedTypes.Graph.ILink[] = [];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        interconnectedLinks.push({
+          source: nodes[i],
+          target: nodes[j],
+          value: 0,
+        });
+      }
+    }
+    return interconnectedLinks;
+  }
+
+  private generateLinks(
+    nodes: SharedTypes.Graph.INode[]
+  ): SharedTypes.Graph.ILink[] {
+    let links: SharedTypes.Graph.ILink[] = [];
+    _.each(_.values(this.state.nodeGroups), (group) => {
+      const nodeGroupA: SharedTypes.Graph.INode[] | undefined = _.filter(
+        nodes,
+        (node) => node.group === group
+      );
+      if (nodeGroupA != null) {
+        links = [...links, ...this.interconnectClusterMembers(nodeGroupA)];
+      }
+    });
+    return links;
+  }
+
+  private populateNodeGroupsStateProp = (
+    nodes: SharedTypes.Graph.INode[]
+  ): void => {
     _.each(nodes, (node: SharedTypes.Graph.INode) => {
       if (!(node.group in this.state.nodeGroups)) {
         this.setState({
@@ -39,8 +131,11 @@ class Graph extends React.Component<
         });
       }
     });
+  };
 
-  private getGroupNodeCoordinations = (nodes: SharedTypes.Graph.INode[]) => {
+  private getGroupNodeCoordinations = (
+    nodes: SharedTypes.Graph.INode[]
+  ): SharedTypes.Graph.IGroupNodeCoordinations => {
     let groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = {};
 
     _.each(nodes, (node) => {
@@ -69,7 +164,7 @@ class Graph extends React.Component<
     return groupNodesCoordinations;
   };
 
-  private getGroupConvexHullCoordinations = () => {
+  private getGroupConvexHullCoordinations = (): SharedTypes.Graph.IGroupConvexHullCoordinations => {
     const { nodes } = this.state.data;
     const groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = this.getGroupNodeCoordinations(
       nodes
@@ -90,30 +185,41 @@ class Graph extends React.Component<
     return groupConvexHullCoordinations;
   };
 
-  private increaseDistanceBetweenDifferentClusters(d3Graph: ForceGraphMethods) {
+  private increaseDistanceBetweenDifferentClusters = (
+    d3Graph: ForceGraphMethods
+  ): void => {
     const forceFn: SharedTypes.Graph.IForceFn | undefined = d3Graph.d3Force(
       "link"
     ) as SharedTypes.Graph.IForceFn;
 
-    if (forceFn != null) {
-      forceFn.distance((link: SharedTypes.Graph.ILink) => {
-        const src: SharedTypes.Graph.INode = link.source;
-        const tgt: SharedTypes.Graph.INode = link.target;
-        if (src.group !== tgt.group) {
-          return 200;
-        } else {
-          return 30;
-        }
-      });
-    }
-  }
+    forceFn?.distance((link: SharedTypes.Graph.ILink) => {
+      const src: SharedTypes.Graph.INode = link.source;
+      const tgt: SharedTypes.Graph.INode = link.target;
+      if (src?.group !== tgt?.group) {
+        return FORCE_LINK_DIFFERENT_GROUP_DISTANCE;
+      } else {
+        return FORCE_LINK_SAME_GROUP_DISTANCE;
+      }
+    });
 
-  private getGroupColor = (nodeGroup: number) => {
-    const groupNodeRepresentative: SharedTypes.Graph.INode | undefined = _.find(
-      this.state.data.nodes,
-      (node) => node.group === nodeGroup
-    );
-    let groupColor: string = "#444";
+    const chargeFn: SharedTypes.Graph.IForceFn | undefined = d3Graph.d3Force(
+      "charge"
+    ) as SharedTypes.Graph.IForceFn;
+
+    chargeFn?.distanceMax(FORCE_CHARGE_MAX_DISTANCE);
+  };
+
+  private getGroupNodeRepresentative = (
+    group: number
+  ): SharedTypes.Graph.INode | undefined =>
+    _.find(this.state.data.nodes, (node) => node.group === group);
+
+  private getGroupColor = (nodeGroup: number): string => {
+    const groupNodeRepresentative:
+      | SharedTypes.Graph.INode
+      | undefined = this.getGroupNodeRepresentative(nodeGroup);
+
+    let groupColor: string = DEFAULT_NODE_COLOR;
 
     if (groupNodeRepresentative != null) {
       groupColor = groupNodeRepresentative.color;
@@ -125,7 +231,7 @@ class Graph extends React.Component<
     ctx: CanvasRenderingContext2D,
     groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations,
     nodeGroup: number
-  ) => {
+  ): void => {
     let grp: { x: number[]; y: number[] } = {
       x: [],
       y: [],
@@ -148,22 +254,33 @@ class Graph extends React.Component<
       x: sum.x / grp.x.length || 0,
       y: sum.y / grp.y.length || 0,
     };
-    ctx.arc(groupMean.x, groupMean.y, 50, 0, Math.PI * 2, true);
+    ctx.arc(
+      groupMean.x,
+      groupMean.y,
+      CANVAS_ARC_RADIUS,
+      CANVAS_ARC_START_ANGLE,
+      CANVAS_ARC_END_ANGLE,
+      CANVAS_ARC_ANTICLOCKWISE
+    );
   };
 
-  private drawClusterHulls = (ctx: CanvasRenderingContext2D) => {
+  private drawClusterHulls = (ctx: CanvasRenderingContext2D): void => {
     let groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations = {};
 
-    // draw the convex hulls exactly once, when component mounts
+    let newConvexHulls: boolean = false;
+    // draw the convex hulls when component mounts and upon change in cluster membership
     if (
       _.isEqual(
         _.keys(this.state.groupConvexHullCoordinations),
         _.keys(this.state.nodeGroups)
-      )
+      ) &&
+      this.state.renderCounter > 2
     ) {
       groupConvexHullCoordinations = this.state.groupConvexHullCoordinations;
     } else {
       groupConvexHullCoordinations = this.getGroupConvexHullCoordinations();
+      newConvexHulls = true;
+      this.setState({ renderCounter: this.state.renderCounter + 1 });
     }
 
     _.each(_.values(this.state.nodeGroups), (nodeGroup) => {
@@ -202,8 +319,49 @@ class Graph extends React.Component<
 
         ctx.stroke();
       }
+
+      // adjust the camera's view in case new convex hulls were created
+      if (newConvexHulls) {
+        this.graphRef.current?.zoomToFit(
+          ZOOM_TO_FIT_DURATION,
+          ZOOM_TO_FIT_PADDING
+        );
+      }
     });
   };
+
+  private assignNewlyAssignedClusterToNode(
+    canvasNode: SharedTypes.Graph.INode
+  ): void {
+    const newGroup: number[][] | undefined = _.find(
+      this.state.groupConvexHullCoordinations,
+      (convexHull) => pointInPolygon([canvasNode.x, canvasNode.y], convexHull)
+    );
+
+    if (newGroup == null) {
+      return;
+    }
+
+    const key: string | undefined = _.findKey(
+      this.state.groupConvexHullCoordinations,
+      (convexHull) => convexHull === newGroup
+    );
+
+    if (key == null) {
+      return;
+    }
+
+    const newGroupKey: number = parseInt(key);
+
+    if (newGroupKey !== canvasNode.group) {
+      this.setState({
+        nodeWithNewlyAssignedCluster: {
+          node: canvasNode,
+          newGroupKey,
+        },
+      });
+    }
+  }
 
   render() {
     return (
@@ -216,9 +374,12 @@ class Graph extends React.Component<
             onNodeDragEnd={(node) => {
               node.fx = node.x;
               node.fy = node.y;
+
+              const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              this.assignNewlyAssignedClusterToNode(canvasNode);
             }}
             linkVisibility={false}
-            warmupTicks={200}
+            warmupTicks={FORCE_GRAPH_WARM_UP_TICKS}
             cooldownTicks={0}
             onRenderFramePre={(ctx) => {
               if (this.graphRef.current != null) {
@@ -231,14 +392,14 @@ class Graph extends React.Component<
             nodeCanvasObject={(node, ctx, globalScale) => {
               const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               const label: string = canvasNode.id;
-              const fontSize = 12 / globalScale;
-              const textWidth = ctx.measureText(label).width;
-              const bckgDimensions = _.map(
+              const fontSize: number = 15 / globalScale;
+              const textWidth: number = ctx.measureText(label).width;
+              const bckgDimensions: number[] = _.map(
                 [textWidth, fontSize],
                 (n) => n + fontSize * 0.2
               );
 
-              ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+              ctx.fillStyle = "white";
               ctx.font = `${fontSize}px Sans-Serif`;
               ctx.fillRect(
                 canvasNode.x - bckgDimensions[0] / 2,
@@ -250,6 +411,20 @@ class Graph extends React.Component<
               ctx.textBaseline = "middle";
               ctx.fillStyle = canvasNode.color;
               ctx.fillText(label, canvasNode.x, canvasNode.y);
+
+              canvasNode.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+            }}
+            nodePointerAreaPaint={(node, color, ctx) => {
+              const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              ctx.fillStyle = color;
+              const bckgDimensions: number[] = canvasNode.__bckgDimensions;
+              bckgDimensions &&
+                ctx.fillRect(
+                  canvasNode.x - bckgDimensions[0] / 2,
+                  canvasNode.y - bckgDimensions[1] / 2,
+                  bckgDimensions[0],
+                  bckgDimensions[1]
+                );
             }}
             onNodeClick={(node: NodeObject) => {
               if (!this.props.isNodeDrawerOpen) {

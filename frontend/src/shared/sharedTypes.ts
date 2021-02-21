@@ -16,9 +16,11 @@ export namespace SharedTypes {
     }
 
     export interface IGraphState {
+      renderCounter: number;
       data: IData;
       nodeGroups: { [group: number]: number };
       groupConvexHullCoordinations: IGroupConvexHullCoordinations;
+      nodeWithNewlyAssignedCluster?: { node: INode; newGroupKey: number };
     }
 
     export interface IData {
@@ -29,9 +31,13 @@ export namespace SharedTypes {
     export interface INode {
       id: string;
       group: number;
+      color: string;
+      index: number;
+      fx: number;
+      fy: number;
       x: number;
       y: number;
-      color: string;
+      __bckgDimensions: number[];
     }
 
     export interface ILink {
@@ -52,6 +58,7 @@ export namespace SharedTypes {
     }
 
     export interface IForceFn {
+      distanceMax: Function;
       distance: Function;
       (alpha: number): void;
       initialize?: (nodes: NodeObject[]) => void;
