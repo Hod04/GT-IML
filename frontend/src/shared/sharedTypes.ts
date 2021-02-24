@@ -4,7 +4,7 @@ export namespace SharedTypes {
   export namespace App {
     export interface IAppState {
       nodeDrawerOpen: boolean;
-      nodeDrawerContent: string | number;
+      nodeDrawerContent: NodeDrawer.INodeDrawerContent;
     }
   }
 
@@ -12,7 +12,7 @@ export namespace SharedTypes {
     export interface IGraphProps {
       toggleNodeDrawer: () => void;
       isNodeDrawerOpen: boolean;
-      assignNodeDrawerContent: (node: NodeObject) => void;
+      assignNodeDrawerContent: (node: INode) => void;
     }
 
     export interface IGraphState {
@@ -31,6 +31,8 @@ export namespace SharedTypes {
     export interface INode {
       id: string;
       group: number;
+      author: string;
+      publishedAt: string;
       color: string;
       index: number;
       fx: number;
@@ -69,7 +71,13 @@ export namespace SharedTypes {
     export interface INodeDrawerProps {
       isOpen: boolean;
       toggleNodeDrawer: () => void;
-      content: string | number;
+      content: INodeDrawerContent;
+    }
+
+    export interface INodeDrawerContent {
+      author: string;
+      publishedAt?: string;
+      text: string;
     }
   }
 }

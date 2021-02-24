@@ -44,7 +44,7 @@ class Graph extends React.Component<
   private graphRef: React.MutableRefObject<ForceGraphMethods> = React.createRef() as React.MutableRefObject<ForceGraphMethods>;
 
   public async componentDidMount(): Promise<void> {
-    const mockdata: Response = await fetch("data/mockdata.json");
+    const mockdata: Response = await fetch("data/data.json");
     const data: SharedTypes.Graph.IData = await mockdata.json();
     this.populateNodeGroupsStateProp(data.nodes);
     this.setState({
@@ -74,13 +74,14 @@ class Graph extends React.Component<
       dataClone.nodes,
       (node) => node.id === this.state.nodeWithNewlyAssignedCluster!.node.id
     );
+
     if (newlyAssignedNode != null) {
       // assign the newly assigned node its new group & corresponding color
-      newlyAssignedNode.group = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
       newlyAssignedNode.color = getGroupColor(
         this.state.data.nodes,
         this.state.nodeWithNewlyAssignedCluster!.newGroupKey
       );
+      newlyAssignedNode.group = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
 
       dataClone.nodes.splice(newlyAssignedNode.index, 1, {
         ...this.state.nodeWithNewlyAssignedCluster!.node,
@@ -365,8 +366,9 @@ class Graph extends React.Component<
             }}
             onNodeClick={(node: NodeObject) => {
               if (!this.props.isNodeDrawerOpen) {
+                const nodeObj: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
                 this.props.toggleNodeDrawer();
-                this.props.assignNodeDrawerContent(node);
+                this.props.assignNodeDrawerContent(nodeObj);
               }
             }}
           />

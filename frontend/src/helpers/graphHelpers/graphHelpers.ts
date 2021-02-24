@@ -70,7 +70,7 @@ export const getGroupColor = (
   nodes: SharedTypes.Graph.INode[],
   nodeGroup: number
 ) => {
-  let mostProminantColor: string = DEFAULT_NODE_COLOR;
+  let mostCommonColor: string = DEFAULT_NODE_COLOR;
   let nodeColorDictionary: { [nodeColor: string]: number } = {
     [DEFAULT_NODE_COLOR]: 1,
   };
@@ -85,12 +85,12 @@ export const getGroupColor = (
       nodeColorDictionary[node.color] = 1;
     }
     if (
-      nodeColorDictionary[node.color] >= nodeColorDictionary[mostProminantColor]
+      nodeColorDictionary[node.color] >= nodeColorDictionary[mostCommonColor]
     ) {
-      mostProminantColor = node.color;
+      mostCommonColor = node.color;
     }
   });
-  return mostProminantColor;
+  return mostCommonColor;
 };
 
 export const getArcCenterForClustersWithAtMostTwoElements = (

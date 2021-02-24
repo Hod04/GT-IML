@@ -3,9 +3,7 @@ import { Drawer, Classes, Divider } from "@blueprintjs/core";
 import { SharedTypes } from "../shared/sharedTypes";
 import "../styles/NodeDrawer.css";
 
-export default class NodeDrawer extends React.Component<
-  SharedTypes.NodeDrawer.INodeDrawerProps
-> {
+export default class NodeDrawer extends React.Component<SharedTypes.NodeDrawer.INodeDrawerProps> {
   render() {
     return (
       <Drawer
@@ -20,15 +18,17 @@ export default class NodeDrawer extends React.Component<
             <p>
               <strong>{"Published At"}</strong>
             </p>
+            <p>{this.props.content.publishedAt}</p>
             <Divider />
             <p>
               <strong>{"Author Name"}</strong>
             </p>
+            <p>{this.props.content.author}</p>
             <Divider />
             <p>
               <strong>{"Text"}</strong>
             </p>
-            <p>{this.props.content}</p>
+            <p>{this.props.content.text}</p>
           </div>
         </div>
       </Drawer>
