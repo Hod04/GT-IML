@@ -22,10 +22,12 @@ json_data["nodes"] = []
 for publishedAt, label_kmedoids, author, text in list(
     zip(data["publishedAt"], data["label_kmedoids"], data["authorName"], data["text"])
 ):
+    first_words = " ".join(text.split()[:3])
     json_data["nodes"].append(
         {
-            "id": text,
-            "group": label_kmedoids,
+            "nodeLabel": f"{first_words}...",
+            "text": text,
+            "group": int(label_kmedoids),
             "author": author,
             "publishedAt": publishedAt,
         }

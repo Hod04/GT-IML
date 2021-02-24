@@ -19,12 +19,12 @@ export default class NodeDrawer extends React.Component<SharedTypes.NodeDrawer.I
               <strong>{"Published At"}</strong>
             </p>
             <p>{this.props.content.publishedAt}</p>
-            <Divider />
+            <Divider className={"gt-iml-node-drawer-divider"} />
             <p>
               <strong>{"Author Name"}</strong>
             </p>
             <p>{this.props.content.author}</p>
-            <Divider />
+            <Divider className={"gt-iml-node-drawer-divider"} />
             <p>
               <strong>{"Text"}</strong>
             </p>

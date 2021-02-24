@@ -72,7 +72,7 @@ class Graph extends React.Component<
     let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
     const newlyAssignedNode: SharedTypes.Graph.INode | undefined = _.find(
       dataClone.nodes,
-      (node) => node.id === this.state.nodeWithNewlyAssignedCluster!.node.id
+      (node) => node.text === this.state.nodeWithNewlyAssignedCluster!.node.text
     );
 
     if (newlyAssignedNode != null) {
@@ -329,7 +329,7 @@ class Graph extends React.Component<
             }}
             nodeCanvasObject={(node, ctx, globalScale) => {
               const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
-              const label: string = canvasNode.id;
+              const label: string = canvasNode.nodeLabel;
               const fontSize: number = 15 / globalScale;
               const textWidth: number = ctx.measureText(label).width;
               const bckgDimensions: number[] = _.map(

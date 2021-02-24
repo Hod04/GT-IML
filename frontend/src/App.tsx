@@ -19,7 +19,7 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
     this.setState({
       nodeDrawerContent: {
         author: nodeObject.author || "John Doe",
-        text: nodeObject.id,
+        text: nodeObject.text,
         publishedAt: nodeObject.publishedAt || "Lorem ipsum",
       },
     });

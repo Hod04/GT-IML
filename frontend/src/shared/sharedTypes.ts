@@ -29,7 +29,8 @@ export namespace SharedTypes {
     }
 
     export interface INode {
-      id: string;
+      nodeLabel: string;
+      text: string;
       group: number;
       author: string;
       publishedAt: string;
