@@ -5,14 +5,20 @@ export namespace SharedTypes {
     export interface IAppState {
       nodeDrawerOpen: boolean;
       nodeDrawerContent: NodeDrawer.INodeDrawerContent;
+      dynamicGraph: boolean;
+      showEdges: boolean;
+      nodes: Graph.INode[];
     }
   }
 
   export namespace Graph {
     export interface IGraphProps {
+      assignNodes: (nodes: INode[]) => void;
       toggleNodeDrawer: () => void;
       isNodeDrawerOpen: boolean;
       assignNodeDrawerContent: (node: INode) => void;
+      dynamicGraph: boolean;
+      showEdges: boolean;
     }
 
     export interface IGraphState {
@@ -29,6 +35,8 @@ export namespace SharedTypes {
     }
 
     export interface INode {
+      id: number;
+      distances: { [nodeId: number]: number };
       nodeLabel: string;
       text: string;
       group: number;
@@ -46,7 +54,7 @@ export namespace SharedTypes {
     export interface ILink {
       source: INode;
       target: INode;
-      value: number;
+      weight: number;
     }
 
     export interface IGroupConvexHullCoordinations {
@@ -62,6 +70,7 @@ export namespace SharedTypes {
 
     export interface IForceFn {
       distanceMax: Function;
+      strength: Function;
       distance: Function;
       (alpha: number): void;
       initialize?: (nodes: NodeObject[]) => void;
@@ -73,12 +82,31 @@ export namespace SharedTypes {
       isOpen: boolean;
       toggleNodeDrawer: () => void;
       content: INodeDrawerContent;
+      nodes: Graph.INode[];
+    }
+
+    export interface INodeDrawerState {
+      nodeInfo: INodeInfo;
+    }
+
+    export interface INodeInfo {
+      [nodeId: number]: { text: string; author: string };
     }
 
     export interface INodeDrawerContent {
       author: string;
-      publishedAt?: string;
+      publishedAt: string;
+      distances: { [nodeId: number]: number };
       text: string;
+    }
+  }
+
+  export namespace NavBar {
+    export interface INavBarProps {
+      dynamicGraph: boolean;
+      showEdges: boolean;
+      toggleDynamicGraph: () => void;
+      toggleShowEdges: () => void;
     }
   }
 }

@@ -6,13 +6,35 @@ export const interconnectClusterMembers = (
   nodes: SharedTypes.Graph.INode[]
 ): SharedTypes.Graph.ILink[] => {
   let interconnectedLinks: SharedTypes.Graph.ILink[] = [];
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      interconnectedLinks.push({
-        source: nodes[i],
-        target: nodes[j],
-        value: 0,
-      });
+  for (let i: number = 0; i < nodes.length; i++) {
+    for (let j: number = i + 1; j < nodes.length; j++) {
+      let nodesFromSameGroup: boolean = false;
+      let nodeWeight: number = nodes[i].distances[nodes[j].id];
+
+      if (nodes[i].group === nodes[j].group) {
+        nodesFromSameGroup = true;
+      }
+
+      const interconnectNode = () =>
+        interconnectedLinks.push({
+          source: nodes[i],
+          target: nodes[j],
+          weight: ~~nodeWeight,
+        });
+
+      interconnectNode();
+
+      // artificially increase edge weight of nodes from same group
+      // by increasing the amount of links between such nodes
+      for (let w: number = 0; w < 20 - ~~nodeWeight; w++) {
+        interconnectNode();
+      }
+
+      if (nodesFromSameGroup) {
+        for (let k: number = 0; k < 50; k++) {
+          interconnectNode();
+        }
+      }
     }
   }
   return interconnectedLinks;
@@ -23,15 +45,17 @@ export const generateLinks = (
   nodeGroups: { [nodeGroup: number]: number }
 ): SharedTypes.Graph.ILink[] => {
   let links: SharedTypes.Graph.ILink[] = [];
-  _.each(_.values(nodeGroups), (group) => {
-    const nodeGroupA: SharedTypes.Graph.INode[] | undefined = _.filter(
-      nodes,
-      (node) => node.group === group
-    );
-    if (nodeGroupA != null) {
-      links = [...links, ...interconnectClusterMembers(nodeGroupA)];
-    }
-  });
+  // _.each(_.values(nodeGroups), (group) => {
+  //   const nodeGroupA: SharedTypes.Graph.INode[] | undefined = _.filter(
+  //     nodes,
+  //     (node) => node.group === group
+  //   );
+  //   if (nodeGroupA != null) {
+  //     links = [...links, ...interconnectClusterMembers(nodeGroupA)];
+  //   }
+  // });
+
+  links = interconnectClusterMembers(nodes);
   return links;
 };
 

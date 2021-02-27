@@ -1,0 +1,23 @@
+.gt-iml-navbar {
+  display: flex;
+  align-items: center;
+}
+
+.gt-iml-navbar .gt-iml-navbar-button {
+  margin: 0 25px;
+}
+
+.gt-iml-navbar .gt-iml-navbar-github-content {
+  display: flex;
+  align-items: center;
+}
+
+.gt-iml-navbar .gt-iml-navbar-github-img {
+  width: 20px;
+  margin-right: 10px;
+}
+
+.gt-iml-navbar .gt-iml-navbar-switch {
+  margin-bottom: 0;
+  margin-left: 25px;
+}

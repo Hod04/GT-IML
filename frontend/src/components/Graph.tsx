@@ -47,6 +47,7 @@ class Graph extends React.Component<
     const mockdata: Response = await fetch("data/data.json");
     const data: SharedTypes.Graph.IData = await mockdata.json();
     this.populateNodeGroupsStateProp(data.nodes);
+    this.props.assignNodes(data.nodes);
     this.setState({
       data: {
         nodes: data.nodes,
@@ -164,7 +165,6 @@ class Graph extends React.Component<
     const chargeFn: SharedTypes.Graph.IForceFn | undefined = d3Graph.d3Force(
       "charge"
     ) as SharedTypes.Graph.IForceFn;
-
     chargeFn?.distanceMax(FORCE_CHARGE_MAX_DISTANCE);
   };
 
@@ -197,6 +197,7 @@ class Graph extends React.Component<
     let newConvexHulls: boolean = false;
     // draw the convex hulls when component mounts and upon change in cluster membership
     if (
+      !this.props.dynamicGraph &&
       _.isEqual(
         _.keys(this.state.groupConvexHullCoordinations),
         _.keys(this.state.nodeGroups)
@@ -248,7 +249,7 @@ class Graph extends React.Component<
       }
 
       // adjust the camera's view in case new convex hulls were created
-      if (newConvexHulls) {
+      if (newConvexHulls && !this.props.dynamicGraph) {
         this.graphRef.current?.zoomToFit(
           ZOOM_TO_FIT_DURATION,
           ZOOM_TO_FIT_PADDING
@@ -310,15 +311,14 @@ class Graph extends React.Component<
             graphData={this.state.data}
             nodeAutoColorBy={"group"}
             onNodeDragEnd={(node) => {
-              node.fx = node.x;
-              node.fy = node.y;
-
               const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               this.assignNewlyAssignedClusterToNode(canvasNode);
             }}
-            linkVisibility={false}
-            warmupTicks={FORCE_GRAPH_WARM_UP_TICKS}
-            cooldownTicks={0}
+            linkVisibility={this.props.showEdges}
+            warmupTicks={
+              this.props.dynamicGraph ? undefined : FORCE_GRAPH_WARM_UP_TICKS
+            }
+            cooldownTicks={this.props.dynamicGraph ? Infinity : 0}
             onRenderFramePre={(ctx) => {
               if (this.graphRef.current != null) {
                 this.increaseDistanceBetweenDifferentClusters(
