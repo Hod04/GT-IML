@@ -4,7 +4,7 @@
 }
 
 .gt-iml-navbar .gt-iml-navbar-button {
-  margin: 0 25px;
+  margin: 0 10px;
 }
 
 .gt-iml-navbar .gt-iml-navbar-github-content {
@@ -20,4 +20,9 @@
 .gt-iml-navbar .gt-iml-navbar-switch {
   margin-bottom: 0;
   margin-left: 25px;
+}
+
+.gt-iml-navbar .gt-iml-navbar-source-code {
+  position: fixed;
+  right: 10px;
 }

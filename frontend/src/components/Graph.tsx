@@ -13,10 +13,16 @@ import {
   CANVAS_ARC_END_ANGLE,
   CANVAS_ARC_RADIUS,
   CANVAS_ARC_START_ANGLE,
+  ClusterCompactness,
   FORCE_CHARGE_MAX_DISTANCE,
   FORCE_GRAPH_WARM_UP_TICKS,
   FORCE_LINK_DIFFERENT_GROUP_DISTANCE,
+  FORCE_LINK_DIFFERENT_GROUP_DISTANCE_CLOSER_DISTANCE,
+  FORCE_LINK_DIFFERENT_GROUP_DISTANCE_FARTHER_DISTANCE,
   FORCE_LINK_SAME_GROUP_DISTANCE,
+  FORCE_LINK_SAME_GROUP_DISTANCE_MORE_COMPACT,
+  FORCE_LINK_SAME_GROUP_DISTANCE_LESS_COMPACT,
+  PairwisseClusterDistance,
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
 } from "../helpers/constants";
@@ -66,6 +72,16 @@ class Graph extends React.Component<
 
     if (!_.isEqual(prevState.nodeGroups, this.state.nodeGroups)) {
       this.populateNodeGroupsStateProp(this.state.data.nodes);
+    }
+
+    if (
+      !_.isEqual(prevProps.clusterCompactness, this.props.clusterCompactness) ||
+      !_.isEqual(
+        prevProps.pairwiseClusterDistance,
+        this.props.pairwiseClusterDistance
+      )
+    ) {
+      this.graphRef.current.d3ReheatSimulation();
     }
   }
 
@@ -156,9 +172,28 @@ class Graph extends React.Component<
       const src: SharedTypes.Graph.INode = link.source;
       const tgt: SharedTypes.Graph.INode = link.target;
       if (src?.group !== tgt?.group) {
-        return FORCE_LINK_DIFFERENT_GROUP_DISTANCE;
+        let pairwiseClusterDistance: number = FORCE_LINK_DIFFERENT_GROUP_DISTANCE;
+        if (
+          this.props.pairwiseClusterDistance === PairwisseClusterDistance.Closer
+        ) {
+          pairwiseClusterDistance = FORCE_LINK_DIFFERENT_GROUP_DISTANCE_CLOSER_DISTANCE;
+        } else if (
+          this.props.pairwiseClusterDistance ===
+          PairwisseClusterDistance.Farther
+        ) {
+          pairwiseClusterDistance = FORCE_LINK_DIFFERENT_GROUP_DISTANCE_FARTHER_DISTANCE;
+        }
+        return pairwiseClusterDistance;
       } else {
-        return FORCE_LINK_SAME_GROUP_DISTANCE;
+        let clusterCompactnessValue: number = FORCE_LINK_SAME_GROUP_DISTANCE;
+        if (this.props.clusterCompactness === ClusterCompactness.LessCompact) {
+          clusterCompactnessValue = FORCE_LINK_SAME_GROUP_DISTANCE_LESS_COMPACT;
+        } else if (
+          this.props.clusterCompactness === ClusterCompactness.MoreCompact
+        ) {
+          clusterCompactnessValue = FORCE_LINK_SAME_GROUP_DISTANCE_MORE_COMPACT;
+        }
+        return clusterCompactnessValue;
       }
     });
 

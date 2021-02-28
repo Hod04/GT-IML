@@ -1,4 +1,8 @@
 import { NodeObject } from "react-force-graph-2d";
+import {
+  ClusterCompactness,
+  PairwisseClusterDistance,
+} from "../helpers/constants";
 
 export namespace SharedTypes {
   export namespace App {
@@ -8,6 +12,8 @@ export namespace SharedTypes {
       dynamicGraph: boolean;
       showEdges: boolean;
       nodes: Graph.INode[];
+      clusterCompactness: ClusterCompactness;
+      pairwiseClusterDistance: PairwisseClusterDistance;
     }
   }
 
@@ -19,6 +25,8 @@ export namespace SharedTypes {
       assignNodeDrawerContent: (node: INode) => void;
       dynamicGraph: boolean;
       showEdges: boolean;
+      clusterCompactness: ClusterCompactness;
+      pairwiseClusterDistance: PairwisseClusterDistance;
     }
 
     export interface IGraphState {
@@ -107,6 +115,12 @@ export namespace SharedTypes {
       showEdges: boolean;
       toggleDynamicGraph: () => void;
       toggleShowEdges: () => void;
+      assignClusterCompactness: (
+        clusterCompactness: ClusterCompactness
+      ) => void;
+      assignPairwiseClusterDistance: (
+        pairwiseClusterDistance: PairwisseClusterDistance
+      ) => void;
     }
   }
 }

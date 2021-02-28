@@ -71,7 +71,3 @@ with open(cosine_distances_doc, newline="") as cos_dist_csv_file:
 with open(data_json_file, "w") as outfile:
     json.dump(json_data, outfile)
 shutil.move("data.json", "../../frontend/public/data/data.json")
-
-"""
-distances: {[id]: distance}
-"""

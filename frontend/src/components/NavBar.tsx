@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Button,
+  HTMLSelect,
   Icon,
   Navbar,
   NavbarDivider,
@@ -10,6 +11,11 @@ import {
 import "../styles/NavBar.css";
 import githubLogo from "../assets/images/github.jpg";
 import { SharedTypes } from "../shared/sharedTypes";
+import _ from "lodash";
+import {
+  ClusterCompactness,
+  PairwisseClusterDistance,
+} from "../helpers/constants";
 
 class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
   render() {
@@ -33,6 +39,38 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
           onChange={this.props.toggleShowEdges}
         />
 
+        <HTMLSelect
+          style={{ marginLeft: 10 }}
+          title={ClusterCompactness.ClusterCompactness}
+          defaultValue={ClusterCompactness.ClusterCompactness}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            this.props.assignClusterCompactness(
+              e.target.value as ClusterCompactness
+            )
+          }
+          minimal
+          options={_.map(
+            ClusterCompactness,
+            (compactnessOption) => compactnessOption
+          )}
+        />
+
+        <HTMLSelect
+          style={{ marginLeft: 10 }}
+          title={PairwisseClusterDistance.PairwisseClusterDistance}
+          defaultValue={PairwisseClusterDistance.PairwisseClusterDistance}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            this.props.assignPairwiseClusterDistance(
+              e.target.value as PairwisseClusterDistance
+            )
+          }
+          minimal
+          options={_.map(
+            PairwisseClusterDistance,
+            (pairwiseDistanceOption) => pairwiseDistanceOption
+          )}
+        />
+
         <Button
           className={"gt-iml-navbar-button"}
           minimal
@@ -42,7 +80,7 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
           <span style={{ marginLeft: 10 }}>{"Refresh"}</span>
         </Button>
 
-        <div style={{ position: "fixed", right: 10 }}>
+        <div className={"gt-iml-navbar-source-code"}>
           <Button
             className={"gt-iml-navbar-button"}
             minimal
