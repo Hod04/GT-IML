@@ -1,7 +1,7 @@
 import { NodeObject } from "react-force-graph-2d";
 import {
-  ClusterCompactness,
-  PairwisseClusterDistance,
+  CLUSTER_COMPACTNESS,
+  PAIRWISE_CLUSTER_DISTANCE,
 } from "../helpers/constants";
 
 export namespace SharedTypes {
@@ -12,8 +12,8 @@ export namespace SharedTypes {
       dynamicGraph: boolean;
       showEdges: boolean;
       nodes: Graph.INode[];
-      clusterCompactness: ClusterCompactness;
-      pairwiseClusterDistance: PairwisseClusterDistance;
+      clusterCompactness: CLUSTER_COMPACTNESS;
+      pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
     }
   }
 
@@ -25,8 +25,8 @@ export namespace SharedTypes {
       assignNodeDrawerContent: (node: INode) => void;
       dynamicGraph: boolean;
       showEdges: boolean;
-      clusterCompactness: ClusterCompactness;
-      pairwiseClusterDistance: PairwisseClusterDistance;
+      clusterCompactness: CLUSTER_COMPACTNESS;
+      pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
     }
 
     export interface IGraphState {
@@ -45,6 +45,7 @@ export namespace SharedTypes {
     export interface INode {
       id: number;
       distances: { [nodeId: number]: number };
+      distanceFromClusterMedoid: number;
       nodeLabel: string;
       text: string;
       group: number;
@@ -62,7 +63,7 @@ export namespace SharedTypes {
     export interface ILink {
       source: INode;
       target: INode;
-      weight: number;
+      cosineDistance: number;
     }
 
     export interface IGroupConvexHullCoordinations {
@@ -116,10 +117,10 @@ export namespace SharedTypes {
       toggleDynamicGraph: () => void;
       toggleShowEdges: () => void;
       assignClusterCompactness: (
-        clusterCompactness: ClusterCompactness
+        clusterCompactness: CLUSTER_COMPACTNESS
       ) => void;
       assignPairwiseClusterDistance: (
-        pairwiseClusterDistance: PairwisseClusterDistance
+        pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE
       ) => void;
     }
   }

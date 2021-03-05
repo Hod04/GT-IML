@@ -16,6 +16,7 @@ with open(data_csv_doc, newline="") as data_csv_file:
                 or header == "label_kmedoids"
                 or header == "text"
                 or header == "authorName"
+                or header == "distance_kmedoids"
             ):
                 try:
                     data[header].append(value)
@@ -28,13 +29,14 @@ json_data["nodes"] = []
 id_array = []
 
 # construct the node objects
-for index, publishedAt, label_kmedoids, author, text in list(
+for index, publishedAt, label_kmedoids, author, text, distance_kmedoids in list(
     zip(
         data["index"],
         data["publishedAt"],
         data["label_kmedoids"],
         data["authorName"],
         data["text"],
+        data["distance_kmedoids"],
     )
 ):
     first_words = " ".join(text.split()[:3])
@@ -46,6 +48,7 @@ for index, publishedAt, label_kmedoids, author, text in list(
             "group": int(label_kmedoids),
             "author": author,
             "publishedAt": publishedAt,
+            "distanceFromClusterMedoid": float(distance_kmedoids),
             "distances": {},
         }
     )

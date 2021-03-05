@@ -7,6 +7,7 @@
       "group": 30,
       "author": "Josu\u00e9 Oller",
       "publishedAt": "2020-01-14 20:21:36",
+      "distanceFromClusterMedoid": 0.0017388463,
       "distances": {
         "10": "14.301182",
         "22": "7.5270624",
@@ -56,6 +57,7 @@
       "group": 0,
       "author": "A Wild Brony",
       "publishedAt": "2020-01-14 9:09:25",
+      "distanceFromClusterMedoid": 0.0003888011,
       "distances": {
         "6": "14.301182",
         "22": "17.080275",
@@ -105,6 +107,7 @@
       "group": 1,
       "author": "Simon Salamon",
       "publishedAt": "2020-01-10 22:08:55",
+      "distanceFromClusterMedoid": 0.0013580918,
       "distances": {
         "6": "7.5270624",
         "10": "17.080275",
@@ -154,6 +157,7 @@
       "group": 38,
       "author": "Jason Davis",
       "publishedAt": "2020-01-10 17:21:01",
+      "distanceFromClusterMedoid": 0.0012772679,
       "distances": {
         "6": "15.902898",
         "10": "23.785408",
@@ -203,6 +207,7 @@
       "group": 32,
       "author": "JollyGreen",
       "publishedAt": "2020-01-01 21:42:07",
+      "distanceFromClusterMedoid": 0.0008997321,
       "distances": {
         "6": "5.6026073",
         "10": "14.4082775",
@@ -252,6 +257,7 @@
       "group": 32,
       "author": "Mark Santa Cruz",
       "publishedAt": "2019-12-31 5:01:26",
+      "distanceFromClusterMedoid": 0.0003117323,
       "distances": {
         "6": "6.3440075",
         "10": "15.474201",
@@ -301,6 +307,7 @@
       "group": 20,
       "author": "Xavier Lauzac",
       "publishedAt": "2019-12-27 1:56:43",
+      "distanceFromClusterMedoid": 0.00015503168,
       "distances": {
         "6": "10.124045",
         "10": "18.275705",
@@ -350,6 +357,7 @@
       "group": 5,
       "author": "Matthew Meyer",
       "publishedAt": "2019-12-24 7:35:01",
+      "distanceFromClusterMedoid": 0.00033682585,
       "distances": {
         "6": "11.920543",
         "10": "20.946138",
@@ -399,6 +407,7 @@
       "group": 33,
       "author": "ROBLOX TEAM",
       "publishedAt": "2019-12-19 21:20:54",
+      "distanceFromClusterMedoid": 4.15e-5,
       "distances": {
         "6": "9.699855",
         "10": "17.044233",
@@ -448,6 +457,7 @@
       "group": 30,
       "author": "G. HELM",
       "publishedAt": "2019-11-18 5:02:51",
+      "distanceFromClusterMedoid": 0.00077080727,
       "distances": {
         "6": "6.380509",
         "10": "17.131863",
@@ -497,6 +507,7 @@
       "group": 30,
       "author": "Yabba Dabba",
       "publishedAt": "2019-11-17 15:32:28",
+      "distanceFromClusterMedoid": 0.00147295,
       "distances": {
         "6": "4.274706",
         "10": "13.745172",
@@ -546,6 +557,7 @@
       "group": 4,
       "author": "David Hellan",
       "publishedAt": "2019-11-17 4:11:08",
+      "distanceFromClusterMedoid": 0.00086808205,
       "distances": {
         "6": "9.318472",
         "10": "17.941978",
@@ -595,6 +607,7 @@
       "group": 2,
       "author": "zigge hylen",
       "publishedAt": "2019-11-09 10:06:44",
+      "distanceFromClusterMedoid": 0.003465712,
       "distances": {
         "6": "9.853444",
         "10": "16.58013",
@@ -644,6 +657,7 @@
       "group": 3,
       "author": "Ian Johnstone",
       "publishedAt": "2019-11-06 3:22:49",
+      "distanceFromClusterMedoid": 0.0020332932,
       "distances": {
         "6": "7.7072334",
         "10": "9.128918",
@@ -693,6 +707,7 @@
       "group": 5,
       "author": "Velo-Pro International",
       "publishedAt": "2019-10-18 13:13:37",
+      "distanceFromClusterMedoid": 0.00045233965,
       "distances": {
         "6": "11.58123",
         "10": "20.717722",
@@ -742,6 +757,7 @@
       "group": 38,
       "author": "The Joker",
       "publishedAt": "2019-10-17 17:28:20",
+      "distanceFromClusterMedoid": 0.0007516742,
       "distances": {
         "6": "13.193793",
         "10": "21.55222",
@@ -791,6 +807,7 @@
       "group": 38,
       "author": "Evan Miller",
       "publishedAt": "2019-10-09 23:56:10",
+      "distanceFromClusterMedoid": 0.00061261654,
       "distances": {
         "6": "14.881337",
         "10": "23.010714",
@@ -840,6 +857,7 @@
       "group": 30,
       "author": "Frankie Diamond",
       "publishedAt": "2019-09-17 9:06:54",
+      "distanceFromClusterMedoid": 0.0014231205,
       "distances": {
         "6": "7.9463544",
         "10": "18.066914",
@@ -889,6 +907,7 @@
       "group": 32,
       "author": "Rick Sanchez",
       "publishedAt": "2019-08-30 9:41:37",
+      "distanceFromClusterMedoid": 6.69e-5,
       "distances": {
         "6": "7.6569867",
         "10": "15.974884",
@@ -938,6 +957,7 @@
       "group": 4,
       "author": "Rob 1",
       "publishedAt": "2019-08-23 6:05:29",
+      "distanceFromClusterMedoid": 0.0011581182,
       "distances": {
         "6": "12.657762",
         "10": "20.452316",
@@ -987,6 +1007,7 @@
       "group": 0,
       "author": "Im not a Rapper",
       "publishedAt": "2019-08-16 19:59:53",
+      "distanceFromClusterMedoid": 0.00013142824,
       "distances": {
         "6": "14.238176",
         "10": "3.0293543",
@@ -1036,6 +1057,7 @@
       "group": 32,
       "author": "coolstay85",
       "publishedAt": "2019-07-29 5:40:06",
+      "distanceFromClusterMedoid": 0.00022143126,
       "distances": {
         "6": "7.345084",
         "10": "14.808191",
@@ -1085,6 +1107,7 @@
       "group": 4,
       "author": "capigolf",
       "publishedAt": "2019-07-14 18:06:57",
+      "distanceFromClusterMedoid": 0.0010780692,
       "distances": {
         "6": "11.273987",
         "10": "19.515162",
@@ -1134,6 +1157,7 @@
       "group": 20,
       "author": "opnwndo",
       "publishedAt": "2019-07-09 13:36:57",
+      "distanceFromClusterMedoid": 0.00013059378,
       "distances": {
         "6": "8.72223",
         "10": "17.373192",
@@ -1183,6 +1207,7 @@
       "group": 20,
       "author": "Bad Robot",
       "publishedAt": "2019-07-08 21:32:33",
+      "distanceFromClusterMedoid": 0.00010359287,
       "distances": {
         "6": "9.843279",
         "10": "18.096632",
@@ -1232,6 +1257,7 @@
       "group": 20,
       "author": "Champ Craft",
       "publishedAt": "2019-05-29 8:40:48",
+      "distanceFromClusterMedoid": 7.47e-5,
       "distances": {
         "6": "8.576899",
         "10": "17.297136",
@@ -1281,6 +1307,7 @@
       "group": 4,
       "author": "Felix B",
       "publishedAt": "2019-05-15 17:29:10",
+      "distanceFromClusterMedoid": 7.49e-5,
       "distances": {
         "6": "12.079329",
         "10": "20.362707",
@@ -1330,6 +1357,7 @@
       "group": 33,
       "author": "Carnivorous plants & gardening",
       "publishedAt": "2018-12-28 23:12:53",
+      "distanceFromClusterMedoid": 3.28e-5,
       "distances": {
         "6": "8.885728",
         "10": "16.535091",
@@ -1379,6 +1407,7 @@
       "group": 1,
       "author": "william dohn",
       "publishedAt": "2018-05-09 19:16:53",
+      "distanceFromClusterMedoid": 0.0005610585,
       "distances": {
         "6": "6.9888887",
         "10": "17.123299",
@@ -1428,6 +1457,7 @@
       "group": 38,
       "author": "E. Rijpstra",
       "publishedAt": "2018-04-29 17:45:53",
+      "distanceFromClusterMedoid": 0.0012868643,
       "distances": {
         "6": "15.950104",
         "10": "23.836126",
@@ -1477,6 +1507,7 @@
       "group": 28,
       "author": "akashmihir84",
       "publishedAt": "2018-04-27 8:29:31",
+      "distanceFromClusterMedoid": 0.0010620952,
       "distances": {
         "6": "3.174377",
         "10": "14.316319",
@@ -1526,6 +1557,7 @@
       "group": 5,
       "author": "jon rheaume",
       "publishedAt": "2018-01-23 2:00:27",
+      "distanceFromClusterMedoid": 8.05e-5,
       "distances": {
         "6": "12.0897455",
         "10": "21.101936",
@@ -1575,6 +1607,7 @@
       "group": 39,
       "author": "Pomeranian Productions",
       "publishedAt": "2017-11-04 7:23:12",
+      "distanceFromClusterMedoid": 0.0015215278,
       "distances": {
         "6": "6.776063",
         "10": "12.595508",
@@ -1624,6 +1657,7 @@
       "group": 32,
       "author": "Moe Rey",
       "publishedAt": "2017-10-30 11:52:36",
+      "distanceFromClusterMedoid": 9e-5,
       "distances": {
         "6": "8.610076",
         "10": "16.178225",
@@ -1673,6 +1707,7 @@
       "group": 30,
       "author": "S T",
       "publishedAt": "2017-11-06 19:24:12",
+      "distanceFromClusterMedoid": 0.003967881,
       "distances": {
         "6": "8.43649",
         "10": "15.867598",
@@ -1722,6 +1757,7 @@
       "group": 30,
       "author": "S T",
       "publishedAt": "2017-09-23 21:35:35",
+      "distanceFromClusterMedoid": 0.0046945214,
       "distances": {
         "6": "8.978397",
         "10": "16.095837",
@@ -1771,6 +1807,7 @@
       "group": 30,
       "author": "S T",
       "publishedAt": "2017-09-22 8:01:06",
+      "distanceFromClusterMedoid": 0.0047465563,
       "distances": {
         "6": "8.945478",
         "10": "16.036661",
@@ -1820,6 +1857,7 @@
       "group": 1,
       "author": "PizzaGuy 88",
       "publishedAt": "2017-06-28 7:23:57",
+      "distanceFromClusterMedoid": 0.0039174557,
       "distances": {
         "6": "8.018885",
         "10": "16.99095",
@@ -1869,6 +1907,7 @@
       "group": 30,
       "author": "Kenny Shen",
       "publishedAt": "2017-06-12 14:03:03",
+      "distanceFromClusterMedoid": 0.004201114,
       "distances": {
         "6": "8.319487",
         "10": "15.820763",
@@ -1918,6 +1957,7 @@
       "group": 28,
       "author": "GuitarMD Pittsburgh",
       "publishedAt": "2017-06-09 7:49:59",
+      "distanceFromClusterMedoid": 0.0023841858,
       "distances": {
         "6": "7.642334",
         "10": "9.236318",
