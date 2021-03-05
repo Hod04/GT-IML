@@ -13,7 +13,7 @@ import {
   CANVAS_ARC_END_ANGLE,
   CANVAS_ARC_RADIUS,
   CANVAS_ARC_START_ANGLE,
-  ClusterCompactness,
+  CLUSTER_COMPACTNESS,
   FORCE_CHARGE_MAX_DISTANCE,
   FORCE_GRAPH_WARM_UP_TICKS,
   FORCE_LINK_DIFFERENT_GROUP_DISTANCE,
@@ -22,7 +22,7 @@ import {
   FORCE_LINK_SAME_GROUP_DISTANCE,
   FORCE_LINK_SAME_GROUP_DISTANCE_MORE_COMPACT,
   FORCE_LINK_SAME_GROUP_DISTANCE_LESS_COMPACT,
-  PairwisseClusterDistance,
+  PAIRWISE_CLUSTER_DISTANCE,
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
 } from "../helpers/constants";
@@ -32,6 +32,7 @@ import {
   getGroupColor,
   getGroupNodeCoordinations,
 } from "../helpers/graphHelpers/graphHelpers";
+import { getColorAccordingToCosineDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
 
 class Graph extends React.Component<
   SharedTypes.Graph.IGraphProps,
@@ -52,8 +53,10 @@ class Graph extends React.Component<
   public async componentDidMount(): Promise<void> {
     const mockdata: Response = await fetch("data/data.json");
     const data: SharedTypes.Graph.IData = await mockdata.json();
+
     this.populateNodeGroupsStateProp(data.nodes);
     this.props.assignNodes(data.nodes);
+
     this.setState({
       data: {
         nodes: data.nodes,
@@ -150,7 +153,6 @@ class Graph extends React.Component<
           x: number;
           y: number;
         } = getArcCenterForClustersWithAtMostTwoElements(groupCoordinations);
-
         groupConvexHullCoordinations[groupKey] = [[arcCenter.x, arcCenter.y]];
       } else {
         groupConvexHullCoordinations[groupKey] = convexHull(groupCoordinations);
@@ -174,22 +176,23 @@ class Graph extends React.Component<
       if (src?.group !== tgt?.group) {
         let pairwiseClusterDistance: number = FORCE_LINK_DIFFERENT_GROUP_DISTANCE;
         if (
-          this.props.pairwiseClusterDistance === PairwisseClusterDistance.Closer
+          this.props.pairwiseClusterDistance ===
+          PAIRWISE_CLUSTER_DISTANCE.Closer
         ) {
           pairwiseClusterDistance = FORCE_LINK_DIFFERENT_GROUP_DISTANCE_CLOSER_DISTANCE;
         } else if (
           this.props.pairwiseClusterDistance ===
-          PairwisseClusterDistance.Farther
+          PAIRWISE_CLUSTER_DISTANCE.Farther
         ) {
           pairwiseClusterDistance = FORCE_LINK_DIFFERENT_GROUP_DISTANCE_FARTHER_DISTANCE;
         }
         return pairwiseClusterDistance;
       } else {
         let clusterCompactnessValue: number = FORCE_LINK_SAME_GROUP_DISTANCE;
-        if (this.props.clusterCompactness === ClusterCompactness.LessCompact) {
+        if (this.props.clusterCompactness === CLUSTER_COMPACTNESS.LessCompact) {
           clusterCompactnessValue = FORCE_LINK_SAME_GROUP_DISTANCE_LESS_COMPACT;
         } else if (
-          this.props.clusterCompactness === ClusterCompactness.MoreCompact
+          this.props.clusterCompactness === CLUSTER_COMPACTNESS.MoreCompact
         ) {
           clusterCompactnessValue = FORCE_LINK_SAME_GROUP_DISTANCE_MORE_COMPACT;
         }
@@ -243,7 +246,9 @@ class Graph extends React.Component<
     } else {
       groupConvexHullCoordinations = this.getGroupConvexHullCoordinations();
       newConvexHulls = true;
-      this.setState({ renderCounter: this.state.renderCounter + 1 });
+      if (!this.props.dynamicGraph) {
+        this.setState({ renderCounter: this.state.renderCounter + 1 });
+      }
     }
 
     _.each(_.values(this.state.nodeGroups), (nodeGroup) => {
@@ -345,6 +350,12 @@ class Graph extends React.Component<
             ref={this.graphRef}
             graphData={this.state.data}
             nodeAutoColorBy={"group"}
+            linkColor={(link) => {
+              const linkObject: SharedTypes.Graph.ILink = link as SharedTypes.Graph.ILink;
+              return getColorAccordingToCosineDistance(
+                linkObject.cosineDistance
+              );
+            }}
             onNodeDragEnd={(node) => {
               const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               this.assignNewlyAssignedClusterToNode(canvasNode);

@@ -20,13 +20,13 @@ export const ZOOM_TO_FIT_PADDING: number = 50;
 
 export const FORCE_GRAPH_WARM_UP_TICKS: number = 200;
 
-export enum ClusterCompactness {
+export enum CLUSTER_COMPACTNESS {
   MoreCompact = "More Compact",
   ClusterCompactness = "Cluster Compactness",
   LessCompact = "Less Compact",
 }
 
-export enum PairwisseClusterDistance {
+export enum PAIRWISE_CLUSTER_DISTANCE {
   Farther = "Farther",
   PairwisseClusterDistance = "Pairwise Cluster Distance",
   Closer = "Closer",

@@ -1,10 +1,10 @@
-export const getTableEntryBackgroundColor = (distance: number): string => {
+export const getColorAccordingToCosineDistance = (distance: number): string => {
   if (distance < 5) {
-    return "seagreen";
+    return "#004c6d";
   } else if (distance < 10) {
-    return "steelblue";
+    return "#346888";
   } else if (distance > 15) {
-    return "indianred";
+    return "#c1e7ff";
   }
-  return "white";
+  return "#7aa6c2";
 };

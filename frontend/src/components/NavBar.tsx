@@ -13,8 +13,8 @@ import githubLogo from "../assets/images/github.jpg";
 import { SharedTypes } from "../shared/sharedTypes";
 import _ from "lodash";
 import {
-  ClusterCompactness,
-  PairwisseClusterDistance,
+  CLUSTER_COMPACTNESS,
+  PAIRWISE_CLUSTER_DISTANCE,
 } from "../helpers/constants";
 
 class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
@@ -41,32 +41,32 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
 
         <HTMLSelect
           style={{ marginLeft: 10 }}
-          title={ClusterCompactness.ClusterCompactness}
-          defaultValue={ClusterCompactness.ClusterCompactness}
+          title={CLUSTER_COMPACTNESS.ClusterCompactness}
+          defaultValue={CLUSTER_COMPACTNESS.ClusterCompactness}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
             this.props.assignClusterCompactness(
-              e.target.value as ClusterCompactness
+              e.target.value as CLUSTER_COMPACTNESS
             )
           }
           minimal
           options={_.map(
-            ClusterCompactness,
+            CLUSTER_COMPACTNESS,
             (compactnessOption) => compactnessOption
           )}
         />
 
         <HTMLSelect
           style={{ marginLeft: 10 }}
-          title={PairwisseClusterDistance.PairwisseClusterDistance}
-          defaultValue={PairwisseClusterDistance.PairwisseClusterDistance}
+          title={PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance}
+          defaultValue={PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
             this.props.assignPairwiseClusterDistance(
-              e.target.value as PairwisseClusterDistance
+              e.target.value as PAIRWISE_CLUSTER_DISTANCE
             )
           }
           minimal
           options={_.map(
-            PairwisseClusterDistance,
+            PAIRWISE_CLUSTER_DISTANCE,
             (pairwiseDistanceOption) => pairwiseDistanceOption
           )}
         />

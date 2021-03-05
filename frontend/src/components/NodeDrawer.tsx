@@ -3,7 +3,7 @@ import { Drawer, Classes, Divider, Tooltip } from "@blueprintjs/core";
 import { SharedTypes } from "../shared/sharedTypes";
 import "../styles/NodeDrawer.css";
 import _ from "lodash";
-import { getTableEntryBackgroundColor } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
+import { getColorAccordingToCosineDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
 
 export default class NodeDrawer extends React.Component<
   SharedTypes.NodeDrawer.INodeDrawerProps,
@@ -75,21 +75,21 @@ export default class NodeDrawer extends React.Component<
           <span>{"Distance Color Legend:"}</span>
           <div
             style={{
-              backgroundColor: getTableEntryBackgroundColor(2),
+              backgroundColor: getColorAccordingToCosineDistance(2),
             }}
           >
             {"Distance < 5"}
           </div>
           <div
             style={{
-              backgroundColor: getTableEntryBackgroundColor(6),
+              backgroundColor: getColorAccordingToCosineDistance(6),
             }}
           >
             {"5 < Distance < 10"}
           </div>
           <div
             style={{
-              backgroundColor: getTableEntryBackgroundColor(11),
+              backgroundColor: getColorAccordingToCosineDistance(11),
               color: "black",
             }}
           >
@@ -97,7 +97,7 @@ export default class NodeDrawer extends React.Component<
           </div>
           <div
             style={{
-              backgroundColor: getTableEntryBackgroundColor(16),
+              backgroundColor: getColorAccordingToCosineDistance(16),
             }}
           >
             {"Distance > 15"}
@@ -116,7 +116,7 @@ export default class NodeDrawer extends React.Component<
         <tr
           key={`${this.props.content.publishedAt}-${nodeId}`}
           style={{
-            backgroundColor: getTableEntryBackgroundColor(distanceValue),
+            backgroundColor: getColorAccordingToCosineDistance(distanceValue),
           }}
         >
           <td>{distanceValue}</td>

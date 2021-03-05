@@ -8,33 +8,33 @@ export const interconnectClusterMembers = (
   let interconnectedLinks: SharedTypes.Graph.ILink[] = [];
   for (let i: number = 0; i < nodes.length; i++) {
     for (let j: number = i + 1; j < nodes.length; j++) {
-      let nodesFromSameGroup: boolean = false;
-      let nodeWeight: number = nodes[i].distances[nodes[j].id];
+      // let nodesFromSameGroup: boolean = false;
+      let cosineDistance: number = nodes[i].distances[nodes[j].id];
 
-      if (nodes[i].group === nodes[j].group) {
-        nodesFromSameGroup = true;
-      }
+      // if (nodes[i].group === nodes[j].group) {
+      //   nodesFromSameGroup = true;
+      // }
 
       const interconnectNode = () =>
         interconnectedLinks.push({
           source: nodes[i],
           target: nodes[j],
-          weight: ~~nodeWeight,
+          cosineDistance: ~~cosineDistance,
         });
 
       interconnectNode();
 
       // artificially increase edge weight of nodes from same group
       // by increasing the amount of links between such nodes
-      for (let w: number = 0; w < 20 - ~~nodeWeight; w++) {
+      for (let w: number = 0; w < 20 - ~~cosineDistance; w++) {
         interconnectNode();
       }
 
-      if (nodesFromSameGroup) {
-        for (let k: number = 0; k < 50; k++) {
-          interconnectNode();
-        }
-      }
+      // if (nodesFromSameGroup) {
+      //   for (let k: number = 0; k < 50; k++) {
+      //     interconnectNode();
+      //   }
+      // }
     }
   }
   return interconnectedLinks;
@@ -124,7 +124,9 @@ export const getArcCenterForClustersWithAtMostTwoElements = (
     x: [],
     y: [],
   };
-
+  if (groupCoordinations.length === 1) {
+    return { x: groupCoordinations[0][0], y: groupCoordinations[0][1] };
+  }
   _.each(_.keys(groupCoordinations), (node) => {
     grp.x = [...grp.x, groupCoordinations[parseInt(node)][0]];
     grp.y = [...grp.y, groupCoordinations[parseInt(node)][1]];
