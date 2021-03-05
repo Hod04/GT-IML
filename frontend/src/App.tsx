@@ -3,8 +3,8 @@ import Graph from "./components/Graph";
 import NavBar from "./components/NavBar";
 import NodeDrawer from "./components/NodeDrawer";
 import {
-  ClusterCompactness,
-  PairwisseClusterDistance,
+  CLUSTER_COMPACTNESS,
+  PAIRWISE_CLUSTER_DISTANCE,
 } from "./helpers/constants";
 import { SharedTypes } from "./shared/sharedTypes";
 
@@ -22,9 +22,9 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
       },
       dynamicGraph: true,
       showEdges: false,
-      clusterCompactness: ClusterCompactness.ClusterCompactness,
+      clusterCompactness: CLUSTER_COMPACTNESS.ClusterCompactness,
       pairwiseClusterDistance:
-        PairwisseClusterDistance.PairwisseClusterDistance,
+        PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance,
     };
   }
 
@@ -41,11 +41,11 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
     this.setState({ showEdges: !this.state.showEdges });
 
   private assignClusterCompactness = (
-    clusterCompactness: ClusterCompactness
+    clusterCompactness: CLUSTER_COMPACTNESS
   ): void => this.setState({ clusterCompactness });
 
   private assignPairwiseClusterDistance = (
-    pairwiseClusterDistance: PairwisseClusterDistance
+    pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE
   ): void => this.setState({ pairwiseClusterDistance });
 
   private assignNodeDrawerContent = (
@@ -53,10 +53,7 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
   ): void => {
     this.setState({
       nodeDrawerContent: {
-        author: nodeObject.author,
-        text: nodeObject.text,
-        publishedAt: nodeObject.publishedAt,
-        distances: nodeObject.distances,
+        ...nodeObject,
       },
     });
   };
