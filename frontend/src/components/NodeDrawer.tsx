@@ -29,7 +29,12 @@ export default class NodeDrawer extends React.Component<
     let nodeInfo: SharedTypes.NodeDrawer.INodeInfo = {} as SharedTypes.NodeDrawer.INodeInfo;
     _.each(
       this.props.nodes,
-      (node) => (nodeInfo[node.id] = { text: node.text, author: node.author })
+      (node) =>
+        (nodeInfo[node.id] = {
+          text: node.text,
+          author: node.author,
+          color: node.color,
+        })
     );
     this.setState({ nodeInfo });
   };
@@ -119,7 +124,18 @@ export default class NodeDrawer extends React.Component<
             backgroundColor: getColorAccordingToCosineDistance(distanceValue),
           }}
         >
-          <td>{distanceValue}</td>
+          <td style={{ display: "flex" }}>
+            <div
+              style={{
+                backgroundColor: `${
+                  this.state.nodeInfo[parseInt(nodeId)]?.color
+                }`,
+                width: 5,
+                marginRight: 5,
+              }}
+            />
+            {distanceValue}
+          </td>
           <td>{this.state.nodeInfo[parseInt(nodeId)]?.author}</td>
           <td>{this.state.nodeInfo[parseInt(nodeId)]?.text}</td>
         </tr>
@@ -133,7 +149,18 @@ export default class NodeDrawer extends React.Component<
         onClose={this.props.toggleNodeDrawer}
         canOutsideClickClose={false}
         size={"33%"}
-        title={"Comment Overview"}
+        title={
+          <div style={{ display: "flex" }}>
+            <div
+              style={{
+                backgroundColor: `${this.props.content.color}`,
+                width: 5,
+                marginRight: 5,
+              }}
+            />
+            {"Comment Overview"}
+          </div>
+        }
       >
         <div className={Classes.DRAWER_BODY}>
           <div className={`${Classes.DIALOG_BODY} gt-iml-node-drawer`}>

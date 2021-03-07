@@ -31,3 +31,19 @@ export enum PAIRWISE_CLUSTER_DISTANCE {
   PairwisseClusterDistance = "Pairwise Cluster Distance",
   Closer = "Closer",
 }
+
+export const CLUSTER_COLOR_PALETTE: string[] = [
+  "#04dce3",
+  "#8ce0dc",
+  "#058c8c",
+  "#636680",
+  "#24244c",
+  "#f75f30",
+  "#1048c1",
+  "#c41cac",
+  "#8455d3",
+  "#9d1666",
+  "#212121",
+  "#c99654",
+  "#84543e",
+];

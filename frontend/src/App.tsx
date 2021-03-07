@@ -18,6 +18,7 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
         author: "",
         publishedAt: "",
         text: "",
+        color: "",
         distances: {},
       },
       dynamicGraph: true,

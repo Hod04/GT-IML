@@ -26,7 +26,7 @@ export const interconnectClusterMembers = (
 
       // artificially increase edge weight of nodes from same group
       // by increasing the amount of links between such nodes
-      for (let w: number = 0; w < 20 - ~~cosineDistance; w++) {
+      for (let w: number = 0; w < 30 - ~~cosineDistance; w++) {
         interconnectNode();
       }
 

@@ -99,7 +99,7 @@ export namespace SharedTypes {
     }
 
     export interface INodeInfo {
-      [nodeId: number]: { text: string; author: string };
+      [nodeId: number]: { text: string; author: string; color: string };
     }
 
     export interface INodeDrawerContent {
@@ -107,6 +107,7 @@ export namespace SharedTypes {
       publishedAt: string;
       distances: { [nodeId: number]: number };
       text: string;
+      color: string;
     }
   }
 

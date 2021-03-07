@@ -25,6 +25,7 @@ import {
   PAIRWISE_CLUSTER_DISTANCE,
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
+  CLUSTER_COLOR_PALETTE,
 } from "../helpers/constants";
 import {
   generateLinks,
@@ -55,6 +56,12 @@ class Graph extends React.Component<
     const data: SharedTypes.Graph.IData = await mockdata.json();
 
     this.populateNodeGroupsStateProp(data.nodes);
+    _.each(data.nodes, (node) => {
+      const groupIndex: number = Object.values(this.state.nodeGroups).indexOf(
+        node.group
+      );
+      node.color = CLUSTER_COLOR_PALETTE[groupIndex];
+    });
     this.props.assignNodes(data.nodes);
 
     this.setState({
@@ -92,7 +99,7 @@ class Graph extends React.Component<
     let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
     const newlyAssignedNode: SharedTypes.Graph.INode | undefined = _.find(
       dataClone.nodes,
-      (node) => node.text === this.state.nodeWithNewlyAssignedCluster!.node.text
+      (node) => node.id === this.state.nodeWithNewlyAssignedCluster!.node.id
     );
 
     if (newlyAssignedNode != null) {
