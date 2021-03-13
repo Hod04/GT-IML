@@ -103,6 +103,7 @@ export default class NodeDrawer extends React.Component<
           <div
             style={{
               backgroundColor: getColorAccordingToCosineDistance(16),
+              color: "black",
             }}
           >
             {"Distance > 15"}
@@ -124,17 +125,20 @@ export default class NodeDrawer extends React.Component<
             backgroundColor: getColorAccordingToCosineDistance(distanceValue),
           }}
         >
-          <td style={{ display: "flex" }}>
-            <div
-              style={{
-                backgroundColor: `${
-                  this.state.nodeInfo[parseInt(nodeId)]?.color
-                }`,
-                width: 5,
-                marginRight: 5,
-              }}
-            />
-            {distanceValue}
+          <td>
+            <div style={{ display: "flex", height: "-webkit-fill-available" }}>
+              <div
+                style={{
+                  backgroundColor: `${
+                    this.state.nodeInfo[parseInt(nodeId)]?.color
+                  }`,
+                  width: 5,
+                  marginRight: 5,
+                  height: 20,
+                }}
+              />
+              {distanceValue}
+            </div>
           </td>
           <td>{this.state.nodeInfo[parseInt(nodeId)]?.author}</td>
           <td>{this.state.nodeInfo[parseInt(nodeId)]?.text}</td>

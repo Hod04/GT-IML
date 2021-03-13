@@ -2,61 +2,47 @@ import _ from "lodash";
 import { SharedTypes } from "../../shared/sharedTypes";
 import { DEFAULT_NODE_COLOR } from "../constants";
 
-export const interconnectClusterMembers = (
-  nodes: SharedTypes.Graph.INode[]
+export const generateLinks = (
+  nodes: SharedTypes.Graph.INode[],
+  distanceRange: { min: number; max: number },
+  numberOfNodesInGroupObject?: { [group: number]: number }
 ): SharedTypes.Graph.ILink[] => {
   let interconnectedLinks: SharedTypes.Graph.ILink[] = [];
+
   for (let i: number = 0; i < nodes.length; i++) {
     for (let j: number = i + 1; j < nodes.length; j++) {
-      // let nodesFromSameGroup: boolean = false;
       let cosineDistance: number = nodes[i].distances[nodes[j].id];
 
-      // if (nodes[i].group === nodes[j].group) {
-      //   nodesFromSameGroup = true;
-      // }
-
-      const interconnectNode = () =>
+      const interconnectNodes = () =>
         interconnectedLinks.push({
           source: nodes[i],
           target: nodes[j],
           cosineDistance: ~~cosineDistance,
         });
 
-      interconnectNode();
+      interconnectNodes();
 
       // artificially increase edge weight of nodes from same group
       // by increasing the amount of links between such nodes
-      for (let w: number = 0; w < 30 - ~~cosineDistance; w++) {
-        interconnectNode();
+      for (
+        let w: number = 0;
+        w < ~~(distanceRange.max * 1.3) - ~~cosineDistance;
+        w++
+      ) {
+        interconnectNodes();
       }
 
-      // if (nodesFromSameGroup) {
-      //   for (let k: number = 0; k < 50; k++) {
-      //     interconnectNode();
-      //   }
-      // }
+      if (
+        numberOfNodesInGroupObject != null &&
+        numberOfNodesInGroupObject[nodes[i].group] <= 2
+      ) {
+        for (let k: number = 0; k < 20; k++) {
+          interconnectNodes();
+        }
+      }
     }
   }
   return interconnectedLinks;
-};
-
-export const generateLinks = (
-  nodes: SharedTypes.Graph.INode[],
-  nodeGroups: { [nodeGroup: number]: number }
-): SharedTypes.Graph.ILink[] => {
-  let links: SharedTypes.Graph.ILink[] = [];
-  // _.each(_.values(nodeGroups), (group) => {
-  //   const nodeGroupA: SharedTypes.Graph.INode[] | undefined = _.filter(
-  //     nodes,
-  //     (node) => node.group === group
-  //   );
-  //   if (nodeGroupA != null) {
-  //     links = [...links, ...interconnectClusterMembers(nodeGroupA)];
-  //   }
-  // });
-
-  links = interconnectClusterMembers(nodes);
-  return links;
 };
 
 export const getGroupNodeCoordinations = (
@@ -90,6 +76,7 @@ export const getGroupNodeCoordinations = (
   return groupNodesCoordinations;
 };
 
+// @TODO: enhance performance by replacing the nodes parameter with an object
 export const getGroupColor = (
   nodes: SharedTypes.Graph.INode[],
   nodeGroup: number

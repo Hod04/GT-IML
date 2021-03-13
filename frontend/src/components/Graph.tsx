@@ -25,7 +25,7 @@ import {
   PAIRWISE_CLUSTER_DISTANCE,
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
-  CLUSTER_COLOR_PALETTE,
+  KELLY_COLOR_PALETTE,
 } from "../helpers/constants";
 import {
   generateLinks,
@@ -45,7 +45,9 @@ class Graph extends React.Component<
       renderCounter: 0,
       data: {} as SharedTypes.Graph.IData,
       nodeGroups: {},
+      numberOfNodesInGroupObject: {},
       groupConvexHullCoordinations: {},
+      distanceRange: {} as { min: number; max: number },
     };
   }
 
@@ -55,19 +57,24 @@ class Graph extends React.Component<
     const mockdata: Response = await fetch("data/data.json");
     const data: SharedTypes.Graph.IData = await mockdata.json();
 
+    this.assignDistanceRange(data.nodes);
     this.populateNodeGroupsStateProp(data.nodes);
     _.each(data.nodes, (node) => {
       const groupIndex: number = Object.values(this.state.nodeGroups).indexOf(
         node.group
       );
-      node.color = CLUSTER_COLOR_PALETTE[groupIndex];
+      node.color = KELLY_COLOR_PALETTE[groupIndex];
     });
     this.props.assignNodes(data.nodes);
 
     this.setState({
       data: {
         nodes: data.nodes,
-        links: generateLinks(data.nodes, this.state.nodeGroups),
+        links: generateLinks(
+          data.nodes,
+          this.state.distanceRange,
+          this.state.numberOfNodesInGroupObject
+        ),
       },
     });
   }
@@ -84,12 +91,17 @@ class Graph extends React.Component<
       this.populateNodeGroupsStateProp(this.state.data.nodes);
     }
 
+    if (_.isEmpty(this.state.distanceRange)) {
+      this.assignDistanceRange(this.state.data.nodes);
+    }
+
     if (
       !_.isEqual(prevProps.clusterCompactness, this.props.clusterCompactness) ||
       !_.isEqual(
         prevProps.pairwiseClusterDistance,
         this.props.pairwiseClusterDistance
-      )
+      ) ||
+      !_.isEqual(prevProps.dynamicGraph, this.props.dynamicGraph)
     ) {
       this.graphRef.current.d3ReheatSimulation();
     }
@@ -115,15 +127,109 @@ class Graph extends React.Component<
         group: this.state.nodeWithNewlyAssignedCluster!.newGroupKey,
       });
 
-      dataClone.links = generateLinks(dataClone.nodes, this.state.nodeGroups);
+      _.each(dataClone.nodes, (node) => {
+        // the examined node is part of the destination group
+        if (node.group === newlyAssignedNode.group) {
+          // dist is not large
+          if (
+            node.distances[newlyAssignedNode.id] <
+              this.state.distanceRange.max / 1.5 &&
+            node.distances[newlyAssignedNode.id] >
+              this.state.distanceRange.max / 3
+          ) {
+            // decrease dist between the moved node and the examined node
+            node.distances[newlyAssignedNode.id] -=
+              this.state.distanceRange.max / 8;
+            // dist is large
+          } else if (
+            node.distances[newlyAssignedNode.id] >=
+            this.state.distanceRange.max / 1.5
+          ) {
+            // search for a new cluster
+            // by getting the smallest dist to a node
+            // change membership to that node's cluster
+            let smallestDist: { nodeId: number; distance: number };
+            _.each(node.distances, (distance, nodeId) => {
+              if (smallestDist == null || distance < smallestDist.distance) {
+                smallestDist = { nodeId: parseInt(nodeId), distance };
+              }
+            });
+            const nodeObjectFromNewGroup:
+              | SharedTypes.Graph.INode
+              | undefined = _.find(
+              this.state.data.nodes,
+              (node) => node.id === smallestDist.nodeId
+            );
+            if (nodeObjectFromNewGroup != null) {
+              const newGroup: number = nodeObjectFromNewGroup.group;
+              node.distances[newlyAssignedNode.id] +=
+                this.state.distanceRange.max / 8;
+              node.group = newGroup;
+              node.color = getGroupColor(this.state.data.nodes, node.group);
+              dataClone.nodes.splice(node.index, 1, node);
+            }
+          }
+          // the examined node is part of the source group or from other groups
+        } else {
+          // dist is (very) small
+          if (
+            node.distances[newlyAssignedNode.id] <
+            this.state.distanceRange.max / 15
+          ) {
+            //change membership to the destination cluster
+            node.group = newlyAssignedNode.group;
+            node.color = newlyAssignedNode.color;
+            dataClone.nodes.splice(node.index, 1, node);
+            // distance is not (very) small
+          } else {
+            // inc dist
+            node.distances[newlyAssignedNode.id] +=
+              this.state.distanceRange.max / 8;
+          }
+        }
+      });
+
+      dataClone.links = generateLinks(
+        dataClone.nodes,
+        this.state.distanceRange
+      );
       this.setState({
         renderCounter: 0,
         nodeWithNewlyAssignedCluster: undefined,
         groupConvexHullCoordinations: {},
         nodeGroups: {},
         data: dataClone,
+        distanceRange: {} as { min: number; max: number },
       });
     }
+  };
+
+  private assignDistanceRange = (nodes: SharedTypes.Graph.INode[]): void => {
+    let distanceRange: { min: number; max: number } = {} as {
+      min: number;
+      max: number;
+    };
+    _.each(nodes, (node) => {
+      const distanceArray: number[] = Object.values(node.distances);
+      const minDist: number | undefined = _.min(distanceArray);
+      const maxDist: number | undefined = _.max(distanceArray);
+
+      if (
+        distanceRange.min == null ||
+        (minDist != null && minDist < distanceRange.min)
+      ) {
+        distanceRange.min = minDist as number;
+      }
+
+      if (
+        distanceRange.max == null ||
+        (maxDist != null && maxDist > distanceRange.max)
+      ) {
+        distanceRange.max = maxDist as number;
+      }
+    });
+
+    this.setState({ distanceRange });
   };
 
   private populateNodeGroupsStateProp = (
@@ -136,6 +242,22 @@ class Graph extends React.Component<
         });
       }
     });
+    this.populateNumberOfNodesInGroupObject(nodes);
+  };
+
+  private populateNumberOfNodesInGroupObject = (
+    nodes: SharedTypes.Graph.INode[]
+  ): void => {
+    let numberOfNodesInGroupObject: { [group: number]: number } = {};
+    _.each(
+      this.state.nodeGroups,
+      (nodeGroup) => (numberOfNodesInGroupObject[nodeGroup] = 0)
+    );
+    _.each(nodes, (node) => {
+      numberOfNodesInGroupObject[node.group] =
+        numberOfNodesInGroupObject[node.group] + 1;
+    });
+    this.setState({ numberOfNodesInGroupObject });
   };
 
   private getGroupConvexHullCoordinations = (): SharedTypes.Graph.IGroupConvexHullCoordinations => {
@@ -178,9 +300,9 @@ class Graph extends React.Component<
     ) as SharedTypes.Graph.IForceFn;
 
     forceFn?.distance((link: SharedTypes.Graph.ILink) => {
-      const src: SharedTypes.Graph.INode = link.source;
-      const tgt: SharedTypes.Graph.INode = link.target;
-      if (src?.group !== tgt?.group) {
+      const sourceNode: SharedTypes.Graph.INode = link.source;
+      const targetNode: SharedTypes.Graph.INode = link.target;
+      if (sourceNode?.group !== targetNode?.group) {
         let pairwiseClusterDistance: number = FORCE_LINK_DIFFERENT_GROUP_DISTANCE;
         if (
           this.props.pairwiseClusterDistance ===
@@ -310,8 +432,11 @@ class Graph extends React.Component<
   ): void {
     const newGroup: number[][] | undefined = _.find(
       this.state.groupConvexHullCoordinations,
-      (convexHull) => {
-        if (convexHull.length === 1) {
+      (convexHull, groupNumber) => {
+        if (
+          convexHull.length === 1 &&
+          canvasNode.group !== parseInt(groupNumber)
+        ) {
           return pointInArc(
             canvasNode.x,
             canvasNode.y,
@@ -380,6 +505,7 @@ class Graph extends React.Component<
               }
               this.drawClusterHulls(ctx);
             }}
+            nodeCanvasObjectMode={() => "before"}
             nodeCanvasObject={(node, ctx, globalScale) => {
               const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               const label: string = canvasNode.nodeLabel;
@@ -390,7 +516,7 @@ class Graph extends React.Component<
                 (n) => n + fontSize * 0.2
               );
 
-              ctx.fillStyle = "white";
+              ctx.fillStyle = "transparent";
               ctx.font = `${fontSize}px Sans-Serif`;
               ctx.fillRect(
                 canvasNode.x - bckgDimensions[0] / 2,
@@ -401,7 +527,7 @@ class Graph extends React.Component<
               ctx.textAlign = "center";
               ctx.textBaseline = "middle";
               ctx.fillStyle = canvasNode.color;
-              ctx.fillText(label, canvasNode.x, canvasNode.y);
+              ctx.fillText(label, canvasNode.x, canvasNode.y + 10);
 
               canvasNode.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
             }}
@@ -414,7 +540,7 @@ class Graph extends React.Component<
                   canvasNode.x - bckgDimensions[0] / 2,
                   canvasNode.y - bckgDimensions[1] / 2,
                   bckgDimensions[0],
-                  bckgDimensions[1]
+                  bckgDimensions[1] + 10
                 );
             }}
             onNodeClick={(node: NodeObject) => {

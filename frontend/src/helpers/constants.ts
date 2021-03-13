@@ -32,18 +32,26 @@ export enum PAIRWISE_CLUSTER_DISTANCE {
   Closer = "Closer",
 }
 
-export const CLUSTER_COLOR_PALETTE: string[] = [
-  "#04dce3",
-  "#8ce0dc",
-  "#058c8c",
-  "#636680",
-  "#24244c",
-  "#f75f30",
-  "#1048c1",
-  "#c41cac",
-  "#8455d3",
-  "#9d1666",
-  "#212121",
-  "#c99654",
-  "#84543e",
+//  theory - https://eleanormaclure.files.wordpress.com/2011/03/colour-coding.pdf (page 5)
+//  kelly's colors - https://i.kinja-img.com/gawker-media/image/upload/1015680494325093012.JPG
+export const KELLY_COLOR_PALETTE: string[] = [
+  "#222222",
+  "#F3C300",
+  "#875692",
+  "#F38400",
+  "#A1CAF1",
+  "#BE0032",
+  "#C2B280",
+  "#008856",
+  "#E68FAC",
+  "#0067A5",
+  "#F99379",
+  "#604E97",
+  "#B3446C",
+  "#DCD300",
+  "#882D17",
+  "#8DB600",
+  "#654522",
+  "#E25822",
+  "#2B3D26",
 ];

@@ -33,8 +33,10 @@ export namespace SharedTypes {
       renderCounter: number;
       data: IData;
       nodeGroups: { [group: number]: number };
+      numberOfNodesInGroupObject: { [group: number]: number };
       groupConvexHullCoordinations: IGroupConvexHullCoordinations;
       nodeWithNewlyAssignedCluster?: { node: INode; newGroupKey: number };
+      distanceRange: { min: number; max: number };
     }
 
     export interface IData {

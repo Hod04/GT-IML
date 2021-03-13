@@ -68,7 +68,7 @@ with open(cosine_distances_doc, newline="") as cos_dist_csv_file:
             if json_data["nodes"][row_index]["id"] != id_array[distance_index]:
                 json_data["nodes"][row_index]["distances"][
                     id_array[distance_index]
-                ] = distance_value
+                ] = float(distance_value)
 
 # save the json file
 with open(data_json_file, "w") as outfile:
