@@ -133,6 +133,31 @@ class Graph extends React.Component<
     );
 
     if (newlyAssignedNode != null) {
+      // const sourceMedoidNode: SharedTypes.Graph.INode | undefined = _.find(
+      //   dataClone.nodes,
+      //   (node) =>
+      //     node.distanceFromClusterMedoid === 0 &&
+      //     node.medoid === newlyAssignedNode.medoid
+      // );
+
+      // const destinationMedoidNode: SharedTypes.Graph.INode | undefined = _.find(
+      //   dataClone.nodes,
+      //   (node) =>
+      //     node.distanceFromClusterMedoid === 0 &&
+      //     node.medoid === this.state.nodeWithNewlyAssignedCluster!.newGroupKey
+      // );
+
+      // if (sourceMedoidNode != null && destinationMedoidNode != null) {
+      //   const a = manhattanDistance(
+      //     { x: newlyAssignedNode.x, y: newlyAssignedNode.y },
+      //     { x: sourceMedoidNode.x, y: sourceMedoidNode.y }
+      //   );
+      //   const b = manhattanDistance(
+      //     { x: newlyAssignedNode.x, y: newlyAssignedNode.y },
+      //     { x: destinationMedoidNode.x, y: destinationMedoidNode.y }
+      //   );
+      // }
+
       // assign the newly assigned node its new group & corresponding color
       newlyAssignedNode.color = getGroupColor(
         this.state.data.nodes,
@@ -140,10 +165,7 @@ class Graph extends React.Component<
       );
       newlyAssignedNode.medoid = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
 
-      dataClone.nodes.splice(newlyAssignedNode.index, 1, {
-        ...this.state.nodeWithNewlyAssignedCluster!.node,
-        medoid: this.state.nodeWithNewlyAssignedCluster!.newGroupKey,
-      });
+      dataClone.nodes.splice(newlyAssignedNode.index, 1, newlyAssignedNode);
 
       dataClone.links = generateLinks(dataClone.nodes);
 

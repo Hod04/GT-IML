@@ -48,6 +48,13 @@ export function euclideanDistance(
   return Math.sqrt(distance);
 }
 
+export function manhattanDistance(
+  pointA: { x: number; y: number },
+  pointB: { x: number; y: number }
+): number {
+  return Math.abs(pointA.x - pointB.x) + Math.abs(pointA.y - pointB.y);
+}
+
 export function getDistanceRange(
   distanceMatrix: number[][]
 ): { min: number; max: number } {

@@ -74,12 +74,17 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
 
         <>
           <NumericInput
-            min={1}
+            min={2}
             max={15}
+            clampValueOnBlur
             defaultValue={this.props.k}
             onValueChange={(valueAsNumber: number) => {
+              if (!(valueAsNumber <= 16 && valueAsNumber >= 2)) {
+                return;
+              }
               this.props.assignK(valueAsNumber);
             }}
+            value={this.props.k}
             style={{ width: 35, marginLeft: 10 }}
           />
           <span style={{ marginLeft: 10 }}>{"k [1, 15]"}</span>
