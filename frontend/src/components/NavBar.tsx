@@ -85,7 +85,7 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
               this.props.assignK(valueAsNumber);
             }}
             value={this.props.k}
-            style={{ width: 35, marginLeft: 10 }}
+            style={{ width: 35, marginLeft: 30 }}
           />
           <span style={{ marginLeft: 10 }}>{"k [1, 15]"}</span>
         </>

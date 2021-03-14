@@ -4,7 +4,7 @@ Development of a user interface prototype for an interactive machine learning sy
 
 ### Prerequisites
 
-- node
+- Node >= 10.16 and npm >= 5.6
 
 ### Usage
 
@@ -14,6 +14,8 @@ npm i
 npm start
 ```
 
-### Screenshot
+### Screenshots
 
 ![plot](/assets/images/GT-IML.png)
+
+![plot](/assets/images/GT-IML-NODE-DRAWER.png)
