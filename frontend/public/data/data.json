@@ -4,401 +4,281 @@
       "id": 6,
       "nodeLabel": "Brazil will lost...",
       "text": "Brazil will lost 25% of territory \ud83d\ude02",
-      "group": 30,
       "author": "Josu\u00e9 Oller",
-      "publishedAt": "2020-01-14 20:21:36",
-      "distanceFromClusterMedoid": 0.0017388463,
-      "distances": {}
+      "publishedAt": "2020-01-14 20:21:36"
     },
     {
       "id": 10,
       "nodeLabel": "Florida and Delaware:...",
       "text": "Florida and Delaware: Aight imma head out",
-      "group": 0,
       "author": "A Wild Brony",
-      "publishedAt": "2020-01-14 9:09:25",
-      "distanceFromClusterMedoid": 0.0003888011,
-      "distances": {}
+      "publishedAt": "2020-01-14 9:09:25"
     },
     {
       "id": 22,
       "nodeLabel": "look at the...",
       "text": "look at the bright side ,more water, great !",
-      "group": 1,
       "author": "Simon Salamon",
-      "publishedAt": "2020-01-10 22:08:55",
-      "distanceFromClusterMedoid": 0.0013580918,
-      "distances": {}
+      "publishedAt": "2020-01-10 22:08:55"
     },
     {
       "id": 24,
       "nodeLabel": "Fake fill a...",
       "text": "Fake fill a glass half full of water then add ice to the top let sit as the ice melts does it over flow?",
-      "group": 38,
       "author": "Jason Davis",
-      "publishedAt": "2020-01-10 17:21:01",
-      "distanceFromClusterMedoid": 0.0012772679,
-      "distances": {}
+      "publishedAt": "2020-01-10 17:21:01"
     },
     {
       "id": 57,
       "nodeLabel": "This actually seems...",
       "text": "This actually seems pretty nice, I&#39;ll be closer to the beach and communist china will be halfway underwater. It&#39;s a win-win in my book.",
-      "group": 32,
       "author": "JollyGreen",
-      "publishedAt": "2020-01-01 21:42:07",
-      "distanceFromClusterMedoid": 0.0008997321,
-      "distances": {}
+      "publishedAt": "2020-01-01 21:42:07"
     },
     {
       "id": 63,
       "nodeLabel": "Seems like China...",
       "text": "Seems like China and USA would lose the most land, they should be at the forefront of change.",
-      "group": 32,
       "author": "Mark Santa Cruz",
-      "publishedAt": "2019-12-31 5:01:26",
-      "distanceFromClusterMedoid": 0.0003117323,
-      "distances": {}
+      "publishedAt": "2019-12-31 5:01:26"
     },
     {
       "id": 91,
       "nodeLabel": "You\u2019re acting like...",
       "text": "You\u2019re acting like it\u2019s going to happen.",
-      "group": 20,
       "author": "Xavier Lauzac",
-      "publishedAt": "2019-12-27 1:56:43",
-      "distanceFromClusterMedoid": 0.00015503168,
-      "distances": {}
+      "publishedAt": "2019-12-27 1:56:43"
     },
     {
       "id": 107,
       "nodeLabel": "Should change the...",
       "text": "Should change the title to &#39;this is what would happen if the polar caps entirely melted over millennia and we just watched the sea rising till it drowned us&#39; of course there are 101 ways to engineer out of this. But of course the polar caps melting is not a reasonable scenario.",
-      "group": 5,
       "author": "Matthew Meyer",
-      "publishedAt": "2019-12-24 7:35:01",
-      "distanceFromClusterMedoid": 0.00033682585,
-      "distances": {}
+      "publishedAt": "2019-12-24 7:35:01"
     },
     {
       "id": 125,
       "nodeLabel": "Thats why Donald...",
       "text": "Thats why Donald trump want walls xD",
-      "group": 33,
       "author": "ROBLOX TEAM",
-      "publishedAt": "2019-12-19 21:20:54",
-      "distanceFromClusterMedoid": 4.15e-5,
-      "distances": {}
+      "publishedAt": "2019-12-19 21:20:54"
     },
     {
       "id": 294,
       "nodeLabel": "Who come up...",
       "text": "Who come up with this, some whinny ass earth lover?",
-      "group": 30,
       "author": "G. HELM",
-      "publishedAt": "2019-11-18 5:02:51",
-      "distanceFromClusterMedoid": 0.00077080727,
-      "distances": {}
+      "publishedAt": "2019-11-18 5:02:51"
     },
     {
       "id": 303,
       "nodeLabel": "I wonder where...",
       "text": "I wonder where all the Jews would end up? Watch out world they have a plan for this event.",
-      "group": 30,
       "author": "Yabba Dabba",
-      "publishedAt": "2019-11-17 15:32:28",
-      "distanceFromClusterMedoid": 0.00147295,
-      "distances": {}
+      "publishedAt": "2019-11-17 15:32:28"
     },
     {
       "id": 323,
       "nodeLabel": "Democrats are melting...",
       "text": "Democrats are melting ice. It is the ultimate wealth redistribution. All the rich people live near the oceans",
-      "group": 4,
       "author": "David Hellan",
-      "publishedAt": "2019-11-17 4:11:08",
-      "distanceFromClusterMedoid": 0.00086808205,
-      "distances": {}
+      "publishedAt": "2019-11-17 4:11:08"
     },
     {
       "id": 418,
       "nodeLabel": "this is not...",
       "text": "this is not fkn true, greta tunberg will save us",
-      "group": 2,
       "author": "zigge hylen",
-      "publishedAt": "2019-11-09 10:06:44",
-      "distanceFromClusterMedoid": 0.003465712,
-      "distances": {}
+      "publishedAt": "2019-11-09 10:06:44"
     },
     {
       "id": 432,
       "nodeLabel": "On the bright...",
       "text": "On the bright side, DC would be under water",
-      "group": 3,
       "author": "Ian Johnstone",
-      "publishedAt": "2019-11-06 3:22:49",
-      "distanceFromClusterMedoid": 0.0020332932,
-      "distances": {}
+      "publishedAt": "2019-11-06 3:22:49"
     },
     {
       "id": 554,
       "nodeLabel": "Currently we are...",
       "text": "Currently we are in a solar minimum at least for the next 11 years. I would expect an ice age before I would expect anything else.",
-      "group": 5,
       "author": "Velo-Pro International",
-      "publishedAt": "2019-10-18 13:13:37",
-      "distanceFromClusterMedoid": 0.00045233965,
-      "distances": {}
+      "publishedAt": "2019-10-18 13:13:37"
     },
     {
       "id": 563,
       "nodeLabel": "That's not how...",
       "text": "That's not how glaciers work, stupid.",
-      "group": 38,
       "author": "The Joker",
-      "publishedAt": "2019-10-17 17:28:20",
-      "distanceFromClusterMedoid": 0.0007516742,
-      "distances": {}
+      "publishedAt": "2019-10-17 17:28:20"
     },
     {
       "id": 644,
       "nodeLabel": "Incorrect. Water expands...",
       "text": "Incorrect. Water expands when it freezes and contracts when it melts leaving the same water level. Simple high school experiment.",
-      "group": 38,
       "author": "Evan Miller",
-      "publishedAt": "2019-10-09 23:56:10",
-      "distanceFromClusterMedoid": 0.00061261654,
-      "distances": {}
+      "publishedAt": "2019-10-09 23:56:10"
     },
     {
       "id": 827,
       "nodeLabel": "Only a vegan...",
       "text": "Only a vegan lifestyle can help us to survive!",
-      "group": 30,
       "author": "Frankie Diamond",
-      "publishedAt": "2019-09-17 9:06:54",
-      "distanceFromClusterMedoid": 0.0014231205,
-      "distances": {}
+      "publishedAt": "2019-09-17 9:06:54"
     },
     {
       "id": 974,
       "nodeLabel": "China is doomed...",
       "text": "China is doomed if this happens... Trump got it all figured out",
-      "group": 32,
       "author": "Rick Sanchez",
-      "publishedAt": "2019-08-30 9:41:37",
-      "distanceFromClusterMedoid": 6.69e-5,
-      "distances": {}
+      "publishedAt": "2019-08-30 9:41:37"
     },
     {
       "id": 1013,
       "nodeLabel": "Global warming is...",
       "text": "Global warming is fake",
-      "group": 4,
       "author": "Rob 1",
-      "publishedAt": "2019-08-23 6:05:29",
-      "distanceFromClusterMedoid": 0.0011581182,
-      "distances": {}
+      "publishedAt": "2019-08-23 6:05:29"
     },
     {
       "id": 1040,
       "nodeLabel": "If florida gone,then...",
       "text": "If florida gone,then it means all the fat dumb gun lovers moves up north",
-      "group": 0,
       "author": "Im not a Rapper",
-      "publishedAt": "2019-08-16 19:59:53",
-      "distanceFromClusterMedoid": 0.00013142824,
-      "distances": {}
+      "publishedAt": "2019-08-16 19:59:53"
     },
     {
       "id": 1169,
       "nodeLabel": "Surprisingly Taiwan survived...",
       "text": "Surprisingly Taiwan survived",
-      "group": 32,
       "author": "coolstay85",
-      "publishedAt": "2019-07-29 5:40:06",
-      "distanceFromClusterMedoid": 0.00022143126,
-      "distances": {}
+      "publishedAt": "2019-07-29 5:40:06"
     },
     {
       "id": 1281,
       "nodeLabel": "This is what...",
       "text": "This is what we deserve for doing global warming",
-      "group": 4,
       "author": "capigolf",
-      "publishedAt": "2019-07-14 18:06:57",
-      "distanceFromClusterMedoid": 0.0010780692,
-      "distances": {}
+      "publishedAt": "2019-07-14 18:06:57"
     },
     {
       "id": 1329,
       "nodeLabel": "Lol like we...",
       "text": "Lol like we will care or have a chance if this would ever happen. It would not be a SLOW process going in...",
-      "group": 20,
       "author": "opnwndo",
-      "publishedAt": "2019-07-09 13:36:57",
-      "distanceFromClusterMedoid": 0.00013059378,
-      "distances": {}
+      "publishedAt": "2019-07-09 13:36:57"
     },
     {
       "id": 1331,
       "nodeLabel": "Its happened before,...",
       "text": "Its happened before, it will happen again",
-      "group": 20,
       "author": "Bad Robot",
-      "publishedAt": "2019-07-08 21:32:33",
-      "distanceFromClusterMedoid": 0.00010359287,
-      "distances": {}
+      "publishedAt": "2019-07-08 21:32:33"
     },
     {
       "id": 1687,
       "nodeLabel": "We need to...",
       "text": "We need to do something not to let this happen",
-      "group": 20,
       "author": "Champ Craft",
-      "publishedAt": "2019-05-29 8:40:48",
-      "distanceFromClusterMedoid": 7.47e-5,
-      "distances": {}
+      "publishedAt": "2019-05-29 8:40:48"
     },
     {
       "id": 1822,
       "nodeLabel": "if you dont...",
       "text": "if you dont belive in climate change you are a traitor to all humans and need to be deald with like traitors!",
-      "group": 4,
       "author": "Felix B",
-      "publishedAt": "2019-05-15 17:29:10",
-      "distanceFromClusterMedoid": 7.49e-5,
-      "distances": {}
+      "publishedAt": "2019-05-15 17:29:10"
     },
     {
       "id": 4674,
       "nodeLabel": "Trump is gonna...",
       "text": "Trump is gonna build a wall and make the ocean pay for it",
-      "group": 33,
       "author": "Carnivorous plants & gardening",
-      "publishedAt": "2018-12-28 23:12:53",
-      "distanceFromClusterMedoid": 3.28e-5,
-      "distances": {}
+      "publishedAt": "2018-12-28 23:12:53"
     },
     {
       "id": 8882,
       "nodeLabel": "Actually the aliens...",
       "text": "Actually the aliens are coming to steal all the water so it will look like Tatooine.",
-      "group": 1,
       "author": "william dohn",
-      "publishedAt": "2018-05-09 19:16:53",
-      "distanceFromClusterMedoid": 0.0005610585,
-      "distances": {}
+      "publishedAt": "2018-05-09 19:16:53"
     },
     {
       "id": 9628,
       "nodeLabel": "All of you...",
       "text": "All of you out there, do this experiment at home, put ice in a glass fill it with water, let it stand and watch what happens once all the ice melts..\ud83d\ude09\ud83d\udc4d",
-      "group": 38,
       "author": "E. Rijpstra",
-      "publishedAt": "2018-04-29 17:45:53",
-      "distanceFromClusterMedoid": 0.0012868643,
-      "distances": {}
+      "publishedAt": "2018-04-29 17:45:53"
     },
     {
       "id": 9776,
       "nodeLabel": "The biggest population...",
       "text": "The biggest population centers that will survive are Paris and Berlin. And then they will go for another world war.",
-      "group": 28,
       "author": "akashmihir84",
-      "publishedAt": "2018-04-27 8:29:31",
-      "distanceFromClusterMedoid": 0.0010620952,
-      "distances": {}
+      "publishedAt": "2018-04-27 8:29:31"
     },
     {
       "id": 10800,
       "nodeLabel": "Well idiot maker...",
       "text": "Well idiot maker of this video. No One Cares. In fact it happened once. In fact just last week there was evidence found of a forest on Antarctica.. So yes it did happen once already. No one wants to hear your cries. Man wasn&#39;t around when it happened climate change just happens.",
-      "group": 5,
       "author": "jon rheaume",
-      "publishedAt": "2018-01-23 2:00:27",
-      "distanceFromClusterMedoid": 8.05e-5,
-      "distances": {}
+      "publishedAt": "2018-01-23 2:00:27"
     },
     {
       "id": 11828,
       "nodeLabel": "Lel Berlin in...",
       "text": "Lel Berlin in germany would be either at the New Coast or on a island.",
-      "group": 39,
       "author": "Pomeranian Productions",
-      "publishedAt": "2017-11-04 7:23:12",
-      "distanceFromClusterMedoid": 0.0015215278,
-      "distances": {}
+      "publishedAt": "2017-11-04 7:23:12"
     },
     {
       "id": 11843,
       "nodeLabel": "Damn chinese!!...",
       "text": "Damn chinese!!",
-      "group": 32,
       "author": "Moe Rey",
-      "publishedAt": "2017-10-30 11:52:36",
-      "distanceFromClusterMedoid": 9e-5,
-      "distances": {}
+      "publishedAt": "2017-10-30 11:52:36"
     },
     {
       "id": 12893,
       "nodeLabel": "you liberals love...",
       "text": "you liberals love money you never earned idiot!",
-      "group": 30,
       "author": "S T",
-      "publishedAt": "2017-11-06 19:24:12",
-      "distanceFromClusterMedoid": 0.003967881,
-      "distances": {}
+      "publishedAt": "2017-11-06 19:24:12"
     },
     {
       "id": 12907,
       "nodeLabel": "these are your...",
       "text": "these are your attempts at taking my money, liberal twit",
-      "group": 30,
       "author": "S T",
-      "publishedAt": "2017-09-23 21:35:35",
-      "distanceFromClusterMedoid": 0.0046945214,
-      "distances": {}
+      "publishedAt": "2017-09-23 21:35:35"
     },
     {
       "id": 12909,
       "nodeLabel": "you liberals make...",
       "text": "you liberals make me sick",
-      "group": 30,
       "author": "S T",
-      "publishedAt": "2017-09-22 8:01:06",
-      "distanceFromClusterMedoid": 0.0047465563,
-      "distances": {}
+      "publishedAt": "2017-09-22 8:01:06"
     },
     {
       "id": 13239,
       "nodeLabel": "On the bright...",
       "text": "On the bright side, at least the Africans get the water they keep begging for.",
-      "group": 1,
       "author": "PizzaGuy 88",
-      "publishedAt": "2017-06-28 7:23:57",
-      "distanceFromClusterMedoid": 0.0039174557,
-      "distances": {}
+      "publishedAt": "2017-06-28 7:23:57"
     },
     {
       "id": 13430,
       "nodeLabel": "thanks to Trump...",
       "text": "thanks to Trump to make this nightmare become real sooner.",
-      "group": 30,
       "author": "Kenny Shen",
-      "publishedAt": "2017-06-12 14:03:03",
-      "distanceFromClusterMedoid": 0.004201114,
-      "distances": {}
+      "publishedAt": "2017-06-12 14:03:03"
     },
     {
       "id": 13512,
       "nodeLabel": "Hey kids, there...",
       "text": "Hey kids, there is an up side: all the Washington politicians would be under water . . .No need to drain the swamp",
-      "group": 28,
       "author": "GuitarMD Pittsburgh",
-      "publishedAt": "2017-06-09 7:49:59",
-      "distanceFromClusterMedoid": 0.0023841858,
-      "distances": {}
+      "publishedAt": "2017-06-09 7:49:59"
     }
   ]
 }

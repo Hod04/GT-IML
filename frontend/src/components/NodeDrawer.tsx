@@ -130,7 +130,7 @@ export default class NodeDrawer extends React.Component<
               <div
                 style={{
                   backgroundColor: `${
-                    this.state.nodeInfo[parseInt(nodeId)]?.color
+                    this.state.nodeInfo[parseInt(nodeId)].color
                   }`,
                   width: 5,
                   marginRight: 5,
@@ -140,54 +140,58 @@ export default class NodeDrawer extends React.Component<
               {distanceValue}
             </div>
           </td>
-          <td>{this.state.nodeInfo[parseInt(nodeId)]?.author}</td>
-          <td>{this.state.nodeInfo[parseInt(nodeId)]?.text}</td>
+          <td>{this.state.nodeInfo[parseInt(nodeId)].author}</td>
+          <td>{this.state.nodeInfo[parseInt(nodeId)].text}</td>
         </tr>
       )
     );
 
   render() {
     return (
-      <Drawer
-        isOpen={this.props.isOpen}
-        onClose={this.props.toggleNodeDrawer}
-        canOutsideClickClose={false}
-        size={"33%"}
-        title={
-          <div style={{ display: "flex" }}>
-            <div
-              style={{
-                backgroundColor: `${this.props.content.color}`,
-                width: 5,
-                marginRight: 5,
-              }}
-            />
-            {"Comment Overview"}
-          </div>
-        }
-      >
-        <div className={Classes.DRAWER_BODY}>
-          <div className={`${Classes.DIALOG_BODY} gt-iml-node-drawer`}>
-            {this.getPublishedAtSection()}
-            <Divider className={"gt-iml-node-drawer-divider"} />
-            {this.getAuthorNameSection()}
-            <Divider className={"gt-iml-node-drawer-divider"} />
-            {this.getTextSection()}
-            <Divider className={"gt-iml-node-drawer-divider"} />
-            {this.getPairWiseDistancesSection()}
-            <table className={"bp3-html-table bp3-interactive"}>
-              <thead>
-                <tr>
-                  <th>{this.getDistancesTableHeaderAndTooltip()}</th>
-                  <th>{"Author"}</th>
-                  <th>{"Text"}</th>
-                </tr>
-              </thead>
-              <tbody>{this.getDistancesTableBody()}</tbody>
-            </table>
-          </div>
-        </div>
-      </Drawer>
+      <>
+        {!_.isEmpty(this.state.nodeInfo) && (
+          <Drawer
+            isOpen={this.props.isOpen}
+            onClose={this.props.toggleNodeDrawer}
+            canOutsideClickClose={false}
+            size={"33%"}
+            title={
+              <div style={{ display: "flex" }}>
+                <div
+                  style={{
+                    backgroundColor: `${this.props.content.color}`,
+                    width: 5,
+                    marginRight: 5,
+                  }}
+                />
+                {"Comment Overview"}
+              </div>
+            }
+          >
+            <div className={Classes.DRAWER_BODY}>
+              <div className={`${Classes.DIALOG_BODY} gt-iml-node-drawer`}>
+                {this.getPublishedAtSection()}
+                <Divider className={"gt-iml-node-drawer-divider"} />
+                {this.getAuthorNameSection()}
+                <Divider className={"gt-iml-node-drawer-divider"} />
+                {this.getTextSection()}
+                <Divider className={"gt-iml-node-drawer-divider"} />
+                {this.getPairWiseDistancesSection()}
+                <table className={"bp3-html-table bp3-interactive"}>
+                  <thead>
+                    <tr>
+                      <th>{this.getDistancesTableHeaderAndTooltip()}</th>
+                      <th>{"Author"}</th>
+                      <th>{"Text"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>{this.getDistancesTableBody()}</tbody>
+                </table>
+              </div>
+            </div>
+          </Drawer>
+        )}
+      </>
     );
   }
 }

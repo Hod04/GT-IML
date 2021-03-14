@@ -6,6 +6,7 @@ import {
   Navbar,
   NavbarDivider,
   NavbarHeading,
+  NumericInput,
   Switch,
 } from "@blueprintjs/core";
 import "../styles/NavBar.css";
@@ -70,6 +71,19 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
             (pairwiseDistanceOption) => pairwiseDistanceOption
           )}
         />
+
+        <>
+          <NumericInput
+            min={1}
+            max={15}
+            defaultValue={this.props.k}
+            onValueChange={(valueAsNumber: number) => {
+              this.props.assignK(valueAsNumber);
+            }}
+            style={{ width: 35, marginLeft: 10 }}
+          />
+          <span style={{ marginLeft: 10 }}>{"k [1, 15]"}</span>
+        </>
 
         <Button
           className={"gt-iml-navbar-button"}

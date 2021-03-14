@@ -14,6 +14,7 @@ export namespace SharedTypes {
       nodes: Graph.INode[];
       clusterCompactness: CLUSTER_COMPACTNESS;
       pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
+      k: number;
     }
   }
 
@@ -27,6 +28,7 @@ export namespace SharedTypes {
       showEdges: boolean;
       clusterCompactness: CLUSTER_COMPACTNESS;
       pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
+      k: number;
     }
 
     export interface IGraphState {
@@ -51,7 +53,7 @@ export namespace SharedTypes {
       distanceFromClusterMedoid: number;
       nodeLabel: string;
       text: string;
-      group: number;
+      medoid: number;
       author: string;
       publishedAt: string;
       color: string;
@@ -118,6 +120,7 @@ export namespace SharedTypes {
     export interface INavBarProps {
       dynamicGraph: boolean;
       showEdges: boolean;
+      k: number;
       toggleDynamicGraph: () => void;
       toggleShowEdges: () => void;
       assignClusterCompactness: (
@@ -126,6 +129,7 @@ export namespace SharedTypes {
       assignPairwiseClusterDistance: (
         pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE
       ) => void;
+      assignK: (k: number) => void;
     }
   }
 }

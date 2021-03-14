@@ -1,3 +1,4 @@
+import _ from "lodash";
 import React from "react";
 import Graph from "./components/Graph";
 import NavBar from "./components/NavBar";
@@ -26,6 +27,7 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
       clusterCompactness: CLUSTER_COMPACTNESS.ClusterCompactness,
       pairwiseClusterDistance:
         PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance,
+      k: 8,
     };
   }
 
@@ -59,16 +61,20 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
     });
   };
 
+  private assignK = (k: number): void => this.setState({ k });
+
   render() {
     return (
       <>
         <NavBar
           dynamicGraph={this.state.dynamicGraph}
           showEdges={this.state.showEdges}
+          k={this.state.k}
           toggleDynamicGraph={this.toggleDynamicGraph}
           toggleShowEdges={this.toggleShowEdges}
           assignClusterCompactness={this.assignClusterCompactness}
           assignPairwiseClusterDistance={this.assignPairwiseClusterDistance}
+          assignK={this.assignK}
         />
         <Graph
           assignNodes={this.assignNodes}
@@ -79,13 +85,16 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
           showEdges={this.state.showEdges}
           clusterCompactness={this.state.clusterCompactness}
           pairwiseClusterDistance={this.state.pairwiseClusterDistance}
+          k={this.state.k}
         />
-        <NodeDrawer
-          nodes={this.state.nodes}
-          toggleNodeDrawer={this.toggleNodeDrawer}
-          isOpen={this.state.nodeDrawerOpen}
-          content={this.state.nodeDrawerContent}
-        />
+        {!_.isEmpty(this.state.nodes) && (
+          <NodeDrawer
+            nodes={this.state.nodes}
+            toggleNodeDrawer={this.toggleNodeDrawer}
+            isOpen={this.state.nodeDrawerOpen}
+            content={this.state.nodeDrawerContent}
+          />
+        )}
       </>
     );
   }

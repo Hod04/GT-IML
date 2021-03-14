@@ -40,6 +40,7 @@ import {
   getDistanceRange,
 } from "../helpers/algorithms/calculateDistanceMatrix";
 import { embeddings } from "../helpers/embeddings";
+import { kmedoids } from "../helpers/algorithms/kmedoids";
 
 class Graph extends React.Component<
   SharedTypes.Graph.IGraphProps,
@@ -70,6 +71,8 @@ class Graph extends React.Component<
 
     this.assignDistanceObjectsForNodes(data.nodes);
 
+    this.assignClusterObjects(data.nodes, this.props.k);
+
     this.assignNodeGroups(data.nodes);
 
     this.assignNodeColors(data.nodes);
@@ -92,10 +95,6 @@ class Graph extends React.Component<
       this.handleNodeClusterMembershipChange();
     }
 
-    if (!_.isEqual(prevState.nodeGroups, this.state.nodeGroups)) {
-      this.assignNodeGroups(this.state.data.nodes);
-    }
-
     if (
       !_.isEqual(prevProps.clusterCompactness, this.props.clusterCompactness) ||
       !_.isEqual(
@@ -105,6 +104,24 @@ class Graph extends React.Component<
       !_.isEqual(prevProps.dynamicGraph, this.props.dynamicGraph)
     ) {
       this.graphRef.current.d3ReheatSimulation();
+    }
+
+    if (!_.isEqual(prevProps.k, this.props.k)) {
+      const { nodes } = this.state.data;
+      this.assignClusterObjects(nodes, this.props.k);
+
+      this.assignNodeGroups(nodes);
+
+      this.assignNodeColors(nodes);
+
+      this.props.assignNodes(nodes);
+
+      this.setState({
+        data: {
+          nodes,
+          links: generateLinks(nodes),
+        },
+      });
     }
   }
 
@@ -121,23 +138,28 @@ class Graph extends React.Component<
         this.state.data.nodes,
         this.state.nodeWithNewlyAssignedCluster!.newGroupKey
       );
-      newlyAssignedNode.group = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
+      newlyAssignedNode.medoid = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
 
       dataClone.nodes.splice(newlyAssignedNode.index, 1, {
         ...this.state.nodeWithNewlyAssignedCluster!.node,
-        group: this.state.nodeWithNewlyAssignedCluster!.newGroupKey,
+        medoid: this.state.nodeWithNewlyAssignedCluster!.newGroupKey,
       });
 
       dataClone.links = generateLinks(dataClone.nodes);
 
-      this.setState({
-        renderCounter: 0,
-        nodeWithNewlyAssignedCluster: undefined,
-        groupConvexHullCoordinations: {},
-        nodeGroups: {},
-        data: dataClone,
-        // distanceRange: {} as { min: number; max: number },
-      });
+      this.setState(
+        {
+          renderCounter: 0,
+          nodeWithNewlyAssignedCluster: undefined,
+          groupConvexHullCoordinations: {},
+          nodeGroups: {},
+          data: dataClone,
+        },
+        () => {
+          const { nodes } = this.state.data;
+          this.assignNodeGroups(nodes);
+        }
+      );
     }
   };
 
@@ -172,6 +194,23 @@ class Graph extends React.Component<
     });
   };
 
+  private assignClusterObjects = (
+    nodes: SharedTypes.Graph.INode[],
+    k: number
+  ): void => {
+    const nodeMedoidInfoObjects: {
+      [nodeId: number]: {
+        medoid: number;
+        distanceFromMedoid: number;
+      };
+    } = kmedoids(this.state.distanceMatrix, nodes, k);
+    _.each(nodes, (node) => {
+      const { medoid, distanceFromMedoid } = nodeMedoidInfoObjects[node.id];
+      node.medoid = medoid;
+      node.distanceFromClusterMedoid = distanceFromMedoid;
+    });
+  };
+
   private assignDistanceRange = (): void => {
     const distanceRange: { min: number; max: number } = getDistanceRange(
       this.state.distanceMatrix
@@ -182,20 +221,20 @@ class Graph extends React.Component<
   private assignNodeColors = (nodes: SharedTypes.Graph.INode[]): void => {
     _.each(nodes, (node) => {
       const groupIndex: number = Object.values(this.state.nodeGroups).indexOf(
-        node.group
+        node.medoid
       );
       node.color = KELLY_COLOR_PALETTE[groupIndex];
     });
   };
 
   private assignNodeGroups = (nodes: SharedTypes.Graph.INode[]): void => {
+    let nodeGroups: { [nodeGroup: number]: number } = {};
     _.each(nodes, (node: SharedTypes.Graph.INode) => {
-      if (!(node.group in this.state.nodeGroups)) {
-        this.setState({
-          nodeGroups: { ...this.state.nodeGroups, [node.group]: node.group },
-        });
+      if (!(node.medoid in nodeGroups)) {
+        nodeGroups[node.medoid] = node.medoid;
       }
     });
+    this.setState({ nodeGroups });
     this.populateNumberOfNodesInGroupObject(nodes);
   };
 
@@ -208,8 +247,8 @@ class Graph extends React.Component<
       (nodeGroup) => (numberOfNodesInGroupObject[nodeGroup] = 0)
     );
     _.each(nodes, (node) => {
-      numberOfNodesInGroupObject[node.group] =
-        numberOfNodesInGroupObject[node.group] + 1;
+      numberOfNodesInGroupObject[node.medoid] =
+        numberOfNodesInGroupObject[node.medoid] + 1;
     });
     this.setState({ numberOfNodesInGroupObject });
   };
@@ -222,8 +261,8 @@ class Graph extends React.Component<
 
     let groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations = {};
 
-    _.each(_.keys(groupNodesCoordinations), (group) => {
-      const groupKey: number = parseInt(group);
+    _.each(_.keys(groupNodesCoordinations), (medoid) => {
+      const groupKey: number = parseInt(medoid);
       let x: number[] = groupNodesCoordinations[groupKey].x;
       let y: number[] = groupNodesCoordinations[groupKey].y;
       const groupCoordinations: number[][] = x.map((xElem, index) => [
@@ -280,7 +319,10 @@ class Graph extends React.Component<
     forceFn?.distance((link: SharedTypes.Graph.ILink) => {
       const sourceNode: SharedTypes.Graph.INode = link.source;
       const targetNode: SharedTypes.Graph.INode = link.target;
-      if (sourceNode?.group !== targetNode?.group) {
+      // console.log(
+      //   _.find(this.state.data.nodes, (node) => node.id === 10)?.medoid
+      // );
+      if (sourceNode?.medoid !== targetNode?.medoid) {
         let pairwiseClusterDistance: number = this.getPairwiseClusterDistance();
         return (
           pairwiseClusterDistance * sourceNode.distances[targetNode.id] * 1.5
@@ -399,7 +441,7 @@ class Graph extends React.Component<
       (convexHull, groupNumber) => {
         if (
           convexHull.length === 1 &&
-          canvasNode.group !== parseInt(groupNumber)
+          canvasNode.medoid !== parseInt(groupNumber)
         ) {
           return pointInArc(
             canvasNode.x,
@@ -428,7 +470,7 @@ class Graph extends React.Component<
 
     const newGroupKey: number = parseInt(key);
 
-    if (newGroupKey !== canvasNode.group) {
+    if (newGroupKey !== canvasNode.medoid) {
       this.setState({
         nodeWithNewlyAssignedCluster: {
           node: canvasNode,
@@ -445,7 +487,7 @@ class Graph extends React.Component<
           <ForceGraph
             ref={this.graphRef}
             graphData={this.state.data}
-            nodeAutoColorBy={"group"}
+            nodeAutoColorBy={"medoid"}
             linkColor={(link) => {
               const linkObject: SharedTypes.Graph.ILink = link as SharedTypes.Graph.ILink;
               return getColorAccordingToPairwiseDistance(

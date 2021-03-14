@@ -31,10 +31,10 @@ export const getGroupNodeCoordinations = (
       return;
     }
 
-    if (!(node.group in groupNodesCoordinations)) {
+    if (!(node.medoid in groupNodesCoordinations)) {
       groupNodesCoordinations = {
         ...groupNodesCoordinations,
-        [node.group]: {
+        [node.medoid]: {
           x: [node.x],
           y: [node.y],
         },
@@ -42,9 +42,9 @@ export const getGroupNodeCoordinations = (
     } else {
       groupNodesCoordinations = {
         ...groupNodesCoordinations,
-        [node.group]: {
-          x: [...groupNodesCoordinations[node.group].x, node.x],
-          y: [...groupNodesCoordinations[node.group].y, node.y],
+        [node.medoid]: {
+          x: [...groupNodesCoordinations[node.medoid].x, node.x],
+          y: [...groupNodesCoordinations[node.medoid].y, node.y],
         },
       };
     }
@@ -63,7 +63,7 @@ export const getGroupColor = (
   };
   const groupNodes: SharedTypes.Graph.INode[] = _.filter(
     nodes,
-    (node) => node.group === nodeGroup
+    (node) => node.medoid === nodeGroup
   );
   _.each(groupNodes, (node) => {
     if (node.color in nodeColorDictionary) {
