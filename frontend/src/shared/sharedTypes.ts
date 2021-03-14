@@ -37,6 +37,7 @@ export namespace SharedTypes {
       groupConvexHullCoordinations: IGroupConvexHullCoordinations;
       nodeWithNewlyAssignedCluster?: { node: INode; newGroupKey: number };
       distanceRange: { min: number; max: number };
+      distanceMatrix: number[][];
     }
 
     export interface IData {
@@ -65,7 +66,7 @@ export namespace SharedTypes {
     export interface ILink {
       source: INode;
       target: INode;
-      cosineDistance: number;
+      pairwiseDistance: number;
     }
 
     export interface IGroupConvexHullCoordinations {

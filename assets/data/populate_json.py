@@ -1,7 +1,7 @@
 import csv, json, shutil
 
 data_csv_doc = "data.csv"
-cosine_distances_doc = "cosine_distances.csv"
+# cosine_distances_doc = "cosine_distances.csv"
 data_json_file = "data.json"
 
 # extract the comments from the data csv doc
@@ -56,19 +56,19 @@ for index, publishedAt, label_kmedoids, author, text, distance_kmedoids in list(
     id_array.append(int(index))
 
 # assign distance object for every node
-with open(cosine_distances_doc, newline="") as cos_dist_csv_file:
-    reader = csv.reader(cos_dist_csv_file)
-    cos_dist_data = {}
-    for row in enumerate(reader):
-        row_index = row[0]
-        row_values = row[1]
-        for distance in enumerate(row_values):
-            distance_index = distance[0]
-            distance_value = distance[1]
-            if json_data["nodes"][row_index]["id"] != id_array[distance_index]:
-                json_data["nodes"][row_index]["distances"][
-                    id_array[distance_index]
-                ] = float(distance_value)
+# with open(cosine_distances_doc, newline="") as cos_dist_csv_file:
+#     reader = csv.reader(cos_dist_csv_file)
+#     cos_dist_data = {}
+#     for row in enumerate(reader):
+#         row_index = row[0]
+#         row_values = row[1]
+#         for distance in enumerate(row_values):
+#             distance_index = distance[0]
+#             distance_value = distance[1]
+#             if json_data["nodes"][row_index]["id"] != id_array[distance_index]:
+#                 json_data["nodes"][row_index]["distances"][
+#                     id_array[distance_index]
+#                 ] = float(distance_value)
 
 # save the json file
 with open(data_json_file, "w") as outfile:

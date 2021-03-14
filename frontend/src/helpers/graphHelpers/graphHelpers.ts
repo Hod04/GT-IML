@@ -3,43 +3,19 @@ import { SharedTypes } from "../../shared/sharedTypes";
 import { DEFAULT_NODE_COLOR } from "../constants";
 
 export const generateLinks = (
-  nodes: SharedTypes.Graph.INode[],
-  distanceRange: { min: number; max: number },
-  numberOfNodesInGroupObject?: { [group: number]: number }
+  nodes: SharedTypes.Graph.INode[]
 ): SharedTypes.Graph.ILink[] => {
   let interconnectedLinks: SharedTypes.Graph.ILink[] = [];
 
   for (let i: number = 0; i < nodes.length; i++) {
     for (let j: number = i + 1; j < nodes.length; j++) {
-      let cosineDistance: number = nodes[i].distances[nodes[j].id];
+      let pairwiseDistance: number = nodes[i].distances[nodes[j].id];
 
-      const interconnectNodes = () =>
-        interconnectedLinks.push({
-          source: nodes[i],
-          target: nodes[j],
-          cosineDistance: ~~cosineDistance,
-        });
-
-      interconnectNodes();
-
-      // artificially increase edge weight of nodes from same group
-      // by increasing the amount of links between such nodes
-      for (
-        let w: number = 0;
-        w < ~~(distanceRange.max * 1.3) - ~~cosineDistance;
-        w++
-      ) {
-        interconnectNodes();
-      }
-
-      if (
-        numberOfNodesInGroupObject != null &&
-        numberOfNodesInGroupObject[nodes[i].group] <= 2
-      ) {
-        for (let k: number = 0; k < 20; k++) {
-          interconnectNodes();
-        }
-      }
+      interconnectedLinks.push({
+        source: nodes[i],
+        target: nodes[j],
+        pairwiseDistance,
+      });
     }
   }
   return interconnectedLinks;

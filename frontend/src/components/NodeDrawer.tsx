@@ -3,7 +3,7 @@ import { Drawer, Classes, Divider, Tooltip } from "@blueprintjs/core";
 import { SharedTypes } from "../shared/sharedTypes";
 import "../styles/NodeDrawer.css";
 import _ from "lodash";
-import { getColorAccordingToCosineDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
+import { getColorAccordingToPairwiseDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
 
 export default class NodeDrawer extends React.Component<
   SharedTypes.NodeDrawer.INodeDrawerProps,
@@ -80,33 +80,33 @@ export default class NodeDrawer extends React.Component<
           <span>{"Distance Color Legend:"}</span>
           <div
             style={{
-              backgroundColor: getColorAccordingToCosineDistance(2),
+              backgroundColor: getColorAccordingToPairwiseDistance(0.2),
             }}
           >
-            {"Distance < 5"}
+            {"Distance < 0.25"}
           </div>
           <div
             style={{
-              backgroundColor: getColorAccordingToCosineDistance(6),
+              backgroundColor: getColorAccordingToPairwiseDistance(0.4),
             }}
           >
-            {"5 < Distance < 10"}
+            {"0.25 <= Distance <= 0.5"}
           </div>
           <div
             style={{
-              backgroundColor: getColorAccordingToCosineDistance(11),
+              backgroundColor: getColorAccordingToPairwiseDistance(0.6),
               color: "black",
             }}
           >
-            {"10 < Distance < 15"}
+            {"0.5 < Distance < 0.75"}
           </div>
           <div
             style={{
-              backgroundColor: getColorAccordingToCosineDistance(16),
+              backgroundColor: getColorAccordingToPairwiseDistance(0.8),
               color: "black",
             }}
           >
-            {"Distance > 15"}
+            {"Distance >= 0.75"}
           </div>
         </>
       }
@@ -122,7 +122,7 @@ export default class NodeDrawer extends React.Component<
         <tr
           key={`${this.props.content.publishedAt}-${nodeId}`}
           style={{
-            backgroundColor: getColorAccordingToCosineDistance(distanceValue),
+            backgroundColor: getColorAccordingToPairwiseDistance(distanceValue),
           }}
         >
           <td>
