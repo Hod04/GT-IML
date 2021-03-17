@@ -1,7 +1,6 @@
 import csv, json, shutil
 
 data_csv_doc = "data.csv"
-# cosine_distances_doc = "cosine_distances.csv"
 data_json_file = "data.json"
 
 # extract the comments from the data csv doc
