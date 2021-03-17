@@ -2,7 +2,6 @@ import React from "react";
 import {
   Button,
   HTMLSelect,
-  Icon,
   Navbar,
   NavbarDivider,
   NavbarHeading,
@@ -87,17 +86,8 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
             value={this.props.k}
             style={{ width: 35, marginLeft: 30 }}
           />
-          <span style={{ marginLeft: 10 }}>{"k [1, 15]"}</span>
+          <span style={{ marginLeft: 10 }}>{"k [2, 15]"}</span>
         </>
-
-        <Button
-          className={"gt-iml-navbar-button"}
-          minimal
-          onClick={() => window.location.reload()}
-        >
-          <Icon icon={"refresh"} />
-          <span style={{ marginLeft: 10 }}>{"Refresh"}</span>
-        </Button>
 
         <div className={"gt-iml-navbar-source-code"}>
           <Button

@@ -30,7 +30,6 @@ import {
 import {
   generateLinks,
   getArcCenterForClustersWithAtMostTwoElements,
-  getClusterColor,
   getClusterNodeCoordinations,
 } from "../helpers/graphHelpers/graphHelpers";
 import { getColorAccordingToPairwiseDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
@@ -49,13 +48,17 @@ class Graph extends React.Component<
   constructor(props: SharedTypes.Graph.IGraphProps) {
     super(props);
     this.state = {
-      renderCounter: 0,
       data: {} as SharedTypes.Graph.IData,
+
       nodeClusters: {},
       numberOfNodesInCluster: {},
       clusterConvexHullCoordinations: {},
+      clusterColorObject: {},
+
       distanceRange: {} as { min: number; max: number },
       distanceMatrix: [],
+
+      renderCounter: 0,
     };
   }
 
@@ -127,6 +130,8 @@ class Graph extends React.Component<
 
   private handleNodeClusterMembershipChange = (): void => {
     let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
+    const newlyAssignedClusterId: number = this.state
+      .nodeWithNewlyAssignedCluster!.newClusterId;
     const newlyAssignedNode: SharedTypes.Graph.INode | undefined = _.find(
       dataClone.nodes,
       (node) => node.id === this.state.nodeWithNewlyAssignedCluster!.node.id
@@ -134,11 +139,11 @@ class Graph extends React.Component<
 
     if (newlyAssignedNode != null) {
       // assign the newly assigned node its new cluster & corresponding color
-      newlyAssignedNode.color = getClusterColor(
-        this.state.data.nodes,
-        this.state.nodeWithNewlyAssignedCluster!.newClusterId
-      );
-      newlyAssignedNode.clusterId = this.state.nodeWithNewlyAssignedCluster!.newClusterId;
+      newlyAssignedNode.color = this.state.clusterColorObject[
+        newlyAssignedClusterId
+      ];
+
+      newlyAssignedNode.clusterId = newlyAssignedClusterId;
 
       dataClone.nodes.splice(newlyAssignedNode.index, 1, newlyAssignedNode);
 
@@ -216,12 +221,23 @@ class Graph extends React.Component<
   };
 
   private assignNodeColors = (nodes: SharedTypes.Graph.INode[]): void => {
+    let clusterColorObject: { [clusterId: number]: string } = {};
+
     _.each(nodes, (node) => {
-      const clusterId: number = Object.values(this.state.nodeClusters).indexOf(
-        node.clusterId
-      );
-      node.color = KELLY_COLOR_PALETTE[clusterId];
+      const clusterId: number = node.clusterId;
+      const clusterIndex: number = Object.values(
+        this.state.nodeClusters
+      ).indexOf(clusterId);
+      const nodeColor: string = KELLY_COLOR_PALETTE[clusterIndex];
+
+      node.color = nodeColor;
+
+      if (!(node.clusterId in clusterColorObject)) {
+        clusterColorObject[clusterId] = nodeColor;
+      }
     });
+
+    this.setState({ clusterColorObject });
   };
 
   private assignNodeClustersStateProperties = (
@@ -229,16 +245,15 @@ class Graph extends React.Component<
   ): void => {
     let nodeClusters: { [clusterId: number]: number } = {};
     let numberOfNodesInCluster: { [clusterId: number]: number } = {};
-    // let
 
     _.each(nodes, (node: SharedTypes.Graph.INode) => {
+      const nodeCluster: number = node.clusterId;
       if (!(node.clusterId in nodeClusters)) {
-        const nodeCluster: number = node.clusterId;
         nodeClusters[node.clusterId] = nodeCluster;
-        if (!(nodeCluster in numberOfNodesInCluster)) {
-          numberOfNodesInCluster[nodeCluster] = 1;
-          return;
-        }
+      }
+      if (!(nodeCluster in numberOfNodesInCluster)) {
+        numberOfNodesInCluster[nodeCluster] = 1;
+      } else {
         numberOfNodesInCluster[nodeCluster] += 1;
       }
     });
@@ -394,7 +409,7 @@ class Graph extends React.Component<
         clusterConvexHullCoordinations[clusterId] != null &&
         clusterConvexHullCoordinations[clusterId].length > 0
       ) {
-        ctx.strokeStyle = getClusterColor(this.state.data.nodes, clusterId);
+        ctx.strokeStyle = this.state.clusterColorObject[clusterId];
         ctx.beginPath();
 
         _.each(clusterConvexHullCoordinations[clusterId], (cluster, index) => {
@@ -489,7 +504,6 @@ class Graph extends React.Component<
           <ForceGraph
             ref={this.graphRef}
             graphData={this.state.data}
-            nodeAutoColorBy={"medoid"}
             linkColor={(link) => {
               const linkObject: SharedTypes.Graph.ILink = link as SharedTypes.Graph.ILink;
               return getColorAccordingToPairwiseDistance(

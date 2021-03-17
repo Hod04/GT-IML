@@ -32,14 +32,19 @@ export namespace SharedTypes {
     }
 
     export interface IGraphState {
-      renderCounter: number;
       data: IData;
-      nodeGroups: { [group: number]: number };
-      numberOfNodesInGroupObject: { [group: number]: number };
-      groupConvexHullCoordinations: IGroupConvexHullCoordinations;
-      nodeWithNewlyAssignedCluster?: { node: INode; newGroupKey: number };
+
+      nodeClusters: { [clusterId: number]: number };
+      numberOfNodesInCluster: { [clusterId: number]: number };
+      clusterConvexHullCoordinations: IClusterConvexHullCoordinations;
+      clusterColorObject: { [clusterId: number]: string };
+
+      nodeWithNewlyAssignedCluster?: { node: INode; newClusterId: number };
+
       distanceRange: { min: number; max: number };
       distanceMatrix: number[][];
+
+      renderCounter: number;
     }
 
     export interface IData {
@@ -53,7 +58,7 @@ export namespace SharedTypes {
       distanceFromClusterMedoid: number;
       nodeLabel: string;
       text: string;
-      medoid: number;
+      clusterId: number;
       author: string;
       publishedAt: string;
       color: string;
@@ -71,12 +76,12 @@ export namespace SharedTypes {
       pairwiseDistance: number;
     }
 
-    export interface IGroupConvexHullCoordinations {
-      [group: number]: number[][];
+    export interface IClusterConvexHullCoordinations {
+      [clusterId: number]: number[][];
     }
 
-    export interface IGroupNodeCoordinations {
-      [group: number]: {
+    export interface IClusterNodeCoordinations {
+      [clusterId: number]: {
         x: number[];
         y: number[];
       };

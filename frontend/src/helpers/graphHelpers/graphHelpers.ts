@@ -1,6 +1,5 @@
 import _ from "lodash";
 import { SharedTypes } from "../../shared/sharedTypes";
-import { DEFAULT_NODE_COLOR } from "../constants";
 
 export const generateLinks = (
   nodes: SharedTypes.Graph.INode[]
@@ -50,34 +49,6 @@ export const getClusterNodeCoordinations = (
     }
   });
   return clusterNodesCoordinations;
-};
-
-// @TODO: enhance performance by replacing the nodes parameter with an object
-export const getClusterColor = (
-  nodes: SharedTypes.Graph.INode[],
-  clusterId: number
-) => {
-  let mostCommonColor: string = DEFAULT_NODE_COLOR;
-  let nodeColorDictionary: { [nodeColor: string]: number } = {
-    [DEFAULT_NODE_COLOR]: 1,
-  };
-  const clusterNodes: SharedTypes.Graph.INode[] = _.filter(
-    nodes,
-    (node) => node.clusterId === clusterId
-  );
-  _.each(clusterNodes, (node) => {
-    if (node.color in nodeColorDictionary) {
-      nodeColorDictionary[node.color] += 1;
-    } else {
-      nodeColorDictionary[node.color] = 1;
-    }
-    if (
-      nodeColorDictionary[node.color] >= nodeColorDictionary[mostCommonColor]
-    ) {
-      mostCommonColor = node.color;
-    }
-  });
-  return mostCommonColor;
 };
 
 export const getArcCenterForClustersWithAtMostTwoElements = (
