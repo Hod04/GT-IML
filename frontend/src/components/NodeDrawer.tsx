@@ -90,7 +90,7 @@ export default class NodeDrawer extends React.Component<
               backgroundColor: getColorAccordingToPairwiseDistance(0.4),
             }}
           >
-            {"0.25 <= Distance <= 0.5"}
+            {"0.25 <= Distance < 0.5"}
           </div>
           <div
             style={{
@@ -98,7 +98,7 @@ export default class NodeDrawer extends React.Component<
               color: "black",
             }}
           >
-            {"0.5 < Distance < 0.75"}
+            {"0.5 <= Distance < 0.75"}
           </div>
           <div
             style={{
@@ -153,7 +153,8 @@ export default class NodeDrawer extends React.Component<
           <Drawer
             isOpen={this.props.isOpen}
             onClose={this.props.toggleNodeDrawer}
-            canOutsideClickClose={false}
+            canOutsideClickClose={true}
+            hasBackdrop={false}
             size={"33%"}
             title={
               <div style={{ display: "flex" }}>

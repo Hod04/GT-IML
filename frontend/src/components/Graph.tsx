@@ -511,8 +511,8 @@ class Graph extends React.Component<
               );
             }}
             onNodeDragEnd={(node) => {
-              const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
-              this.assignNewlyAssignedClusterToNode(canvasNode);
+              const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              this.assignNewlyAssignedClusterToNode(graphNode);
             }}
             linkVisibility={this.props.showEdges}
             warmupTicks={
@@ -527,8 +527,8 @@ class Graph extends React.Component<
             }}
             nodeCanvasObjectMode={() => "before"}
             nodeCanvasObject={(node, ctx, globalScale) => {
-              const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
-              const label: string = canvasNode.nodeLabel;
+              const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              const label: string = graphNode.nodeLabel;
               const fontSize: number = 15 / globalScale;
               const textWidth: number = ctx.measureText(label).width;
               const bckgDimensions: number[] = _.map(
@@ -539,35 +539,42 @@ class Graph extends React.Component<
               ctx.fillStyle = "transparent";
               ctx.font = `${fontSize}px Sans-Serif`;
               ctx.fillRect(
-                canvasNode.x - bckgDimensions[0] / 2,
-                canvasNode.y - bckgDimensions[1] / 2,
+                graphNode.x - bckgDimensions[0] / 2,
+                graphNode.y - bckgDimensions[1] / 2,
                 bckgDimensions[0],
                 bckgDimensions[1]
               );
               ctx.textAlign = "center";
               ctx.textBaseline = "middle";
-              ctx.fillStyle = canvasNode.color;
-              ctx.fillText(label, canvasNode.x, canvasNode.y + 10);
+              ctx.fillStyle = graphNode.color;
+              ctx.fillText(label, graphNode.x, graphNode.y + 10);
 
-              canvasNode.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+              graphNode.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
             }}
             nodePointerAreaPaint={(node, color, ctx) => {
-              const canvasNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               ctx.fillStyle = color;
-              const bckgDimensions: number[] = canvasNode.__bckgDimensions;
+              const bckgDimensions: number[] = graphNode.__bckgDimensions;
               bckgDimensions &&
                 ctx.fillRect(
-                  canvasNode.x - bckgDimensions[0] / 2,
-                  canvasNode.y - bckgDimensions[1] / 2,
+                  graphNode.x - bckgDimensions[0] / 2,
+                  graphNode.y - bckgDimensions[1] / 2,
                   bckgDimensions[0],
                   bckgDimensions[1] + 10
                 );
             }}
             onNodeClick={(node: NodeObject) => {
+              const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               if (!this.props.isNodeDrawerOpen) {
-                const nodeObj: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
                 this.props.toggleNodeDrawer();
-                this.props.assignNodeDrawerContent(nodeObj);
+                this.props.assignNodeDrawerContent(graphNode);
+              } else {
+                this.props.assignNodeDrawerContent(graphNode);
+              }
+            }}
+            onBackgroundClick={() => {
+              if (this.props.isNodeDrawerOpen) {
+                this.props.toggleNodeDrawer();
               }
             }}
           />

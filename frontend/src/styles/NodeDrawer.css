@@ -6,3 +6,11 @@
 .gt-iml-node-drawer .gt-iml-node-drawer-divider {
   margin: 50px 0 20px 0;
 }
+
+.bp3-overlay {
+  pointer-events: none;
+}
+
+.bp3-overlay-content {
+  pointer-events: all;
+}

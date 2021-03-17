@@ -4,7 +4,8 @@ Development of a user interface prototype for an interactive machine learning sy
 
 ### Prerequisites
 
-- Node >= 10.16 and npm >= 5.6
+- `node` >= 10.16
+- `npm` >= 5.6
 
 ### Usage
 
