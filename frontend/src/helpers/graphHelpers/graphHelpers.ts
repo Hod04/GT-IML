@@ -21,51 +21,51 @@ export const generateLinks = (
   return interconnectedLinks;
 };
 
-export const getGroupNodeCoordinations = (
+export const getClusterNodeCoordinations = (
   nodes: SharedTypes.Graph.INode[]
-): SharedTypes.Graph.IGroupNodeCoordinations => {
-  let groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = {};
+): SharedTypes.Graph.IClusterNodeCoordinations => {
+  let clusterNodesCoordinations: SharedTypes.Graph.IClusterNodeCoordinations = {};
 
   _.each(nodes, (node) => {
     if (node.x == null || node.y == null) {
       return;
     }
 
-    if (!(node.medoid in groupNodesCoordinations)) {
-      groupNodesCoordinations = {
-        ...groupNodesCoordinations,
-        [node.medoid]: {
+    if (!(node.clusterId in clusterNodesCoordinations)) {
+      clusterNodesCoordinations = {
+        ...clusterNodesCoordinations,
+        [node.clusterId]: {
           x: [node.x],
           y: [node.y],
         },
       };
     } else {
-      groupNodesCoordinations = {
-        ...groupNodesCoordinations,
-        [node.medoid]: {
-          x: [...groupNodesCoordinations[node.medoid].x, node.x],
-          y: [...groupNodesCoordinations[node.medoid].y, node.y],
+      clusterNodesCoordinations = {
+        ...clusterNodesCoordinations,
+        [node.clusterId]: {
+          x: [...clusterNodesCoordinations[node.clusterId].x, node.x],
+          y: [...clusterNodesCoordinations[node.clusterId].y, node.y],
         },
       };
     }
   });
-  return groupNodesCoordinations;
+  return clusterNodesCoordinations;
 };
 
 // @TODO: enhance performance by replacing the nodes parameter with an object
-export const getGroupColor = (
+export const getClusterColor = (
   nodes: SharedTypes.Graph.INode[],
-  nodeGroup: number
+  clusterId: number
 ) => {
   let mostCommonColor: string = DEFAULT_NODE_COLOR;
   let nodeColorDictionary: { [nodeColor: string]: number } = {
     [DEFAULT_NODE_COLOR]: 1,
   };
-  const groupNodes: SharedTypes.Graph.INode[] = _.filter(
+  const clusterNodes: SharedTypes.Graph.INode[] = _.filter(
     nodes,
-    (node) => node.medoid === nodeGroup
+    (node) => node.clusterId === clusterId
   );
-  _.each(groupNodes, (node) => {
+  _.each(clusterNodes, (node) => {
     if (node.color in nodeColorDictionary) {
       nodeColorDictionary[node.color] += 1;
     } else {
@@ -81,18 +81,18 @@ export const getGroupColor = (
 };
 
 export const getArcCenterForClustersWithAtMostTwoElements = (
-  groupCoordinations: number[][]
+  clusterCoordinations: number[][]
 ): { x: number; y: number } => {
   let grp: { x: number[]; y: number[] } = {
     x: [],
     y: [],
   };
-  if (groupCoordinations.length === 1) {
-    return { x: groupCoordinations[0][0], y: groupCoordinations[0][1] };
+  if (clusterCoordinations.length === 1) {
+    return { x: clusterCoordinations[0][0], y: clusterCoordinations[0][1] };
   }
-  _.each(_.keys(groupCoordinations), (node) => {
-    grp.x = [...grp.x, groupCoordinations[parseInt(node)][0]];
-    grp.y = [...grp.y, groupCoordinations[parseInt(node)][1]];
+  _.each(_.keys(clusterCoordinations), (node) => {
+    grp.x = [...grp.x, clusterCoordinations[parseInt(node)][0]];
+    grp.y = [...grp.y, clusterCoordinations[parseInt(node)][1]];
   });
 
   const sum: { x: number; y: number } = {

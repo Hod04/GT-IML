@@ -16,12 +16,12 @@ import {
   CLUSTER_COMPACTNESS,
   FORCE_CHARGE_MAX_DISTANCE,
   FORCE_GRAPH_WARM_UP_TICKS,
-  FORCE_LINK_DIFFERENT_GROUP_DISTANCE,
-  FORCE_LINK_DIFFERENT_GROUP_DISTANCE_CLOSER_DISTANCE,
-  FORCE_LINK_DIFFERENT_GROUP_DISTANCE_FARTHER_DISTANCE,
-  FORCE_LINK_SAME_GROUP_DISTANCE,
-  FORCE_LINK_SAME_GROUP_DISTANCE_MORE_COMPACT,
-  FORCE_LINK_SAME_GROUP_DISTANCE_LESS_COMPACT,
+  FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE,
+  FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE_CLOSER_DISTANCE,
+  FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE_FARTHER_DISTANCE,
+  FORCE_LINK_SAME_CLUSTER_DISTANCE,
+  FORCE_LINK_SAME_CLUSTER_DISTANCE_MORE_COMPACT,
+  FORCE_LINK_SAME_CLUSTER_DISTANCE_LESS_COMPACT,
   PAIRWISE_CLUSTER_DISTANCE,
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
@@ -30,8 +30,8 @@ import {
 import {
   generateLinks,
   getArcCenterForClustersWithAtMostTwoElements,
-  getGroupColor,
-  getGroupNodeCoordinations,
+  getClusterColor,
+  getClusterNodeCoordinations,
 } from "../helpers/graphHelpers/graphHelpers";
 import { getColorAccordingToPairwiseDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
 import {
@@ -51,9 +51,9 @@ class Graph extends React.Component<
     this.state = {
       renderCounter: 0,
       data: {} as SharedTypes.Graph.IData,
-      nodeGroups: {},
-      numberOfNodesInGroupObject: {},
-      groupConvexHullCoordinations: {},
+      nodeClusters: {},
+      numberOfNodesInCluster: {},
+      clusterConvexHullCoordinations: {},
       distanceRange: {} as { min: number; max: number },
       distanceMatrix: [],
     };
@@ -73,7 +73,7 @@ class Graph extends React.Component<
 
     this.assignClusterObjects(data.nodes, this.props.k);
 
-    this.assignNodeGroups(data.nodes);
+    this.assignNodeClustersStateProperties(data.nodes);
 
     this.assignNodeColors(data.nodes);
 
@@ -110,7 +110,7 @@ class Graph extends React.Component<
       const { nodes } = this.state.data;
       this.assignClusterObjects(nodes, this.props.k);
 
-      this.assignNodeGroups(nodes);
+      this.assignNodeClustersStateProperties(nodes);
 
       this.assignNodeColors(nodes);
 
@@ -133,37 +133,12 @@ class Graph extends React.Component<
     );
 
     if (newlyAssignedNode != null) {
-      // const sourceMedoidNode: SharedTypes.Graph.INode | undefined = _.find(
-      //   dataClone.nodes,
-      //   (node) =>
-      //     node.distanceFromClusterMedoid === 0 &&
-      //     node.medoid === newlyAssignedNode.medoid
-      // );
-
-      // const destinationMedoidNode: SharedTypes.Graph.INode | undefined = _.find(
-      //   dataClone.nodes,
-      //   (node) =>
-      //     node.distanceFromClusterMedoid === 0 &&
-      //     node.medoid === this.state.nodeWithNewlyAssignedCluster!.newGroupKey
-      // );
-
-      // if (sourceMedoidNode != null && destinationMedoidNode != null) {
-      //   const a = manhattanDistance(
-      //     { x: newlyAssignedNode.x, y: newlyAssignedNode.y },
-      //     { x: sourceMedoidNode.x, y: sourceMedoidNode.y }
-      //   );
-      //   const b = manhattanDistance(
-      //     { x: newlyAssignedNode.x, y: newlyAssignedNode.y },
-      //     { x: destinationMedoidNode.x, y: destinationMedoidNode.y }
-      //   );
-      // }
-
-      // assign the newly assigned node its new group & corresponding color
-      newlyAssignedNode.color = getGroupColor(
+      // assign the newly assigned node its new cluster & corresponding color
+      newlyAssignedNode.color = getClusterColor(
         this.state.data.nodes,
-        this.state.nodeWithNewlyAssignedCluster!.newGroupKey
+        this.state.nodeWithNewlyAssignedCluster!.newClusterId
       );
-      newlyAssignedNode.medoid = this.state.nodeWithNewlyAssignedCluster!.newGroupKey;
+      newlyAssignedNode.clusterId = this.state.nodeWithNewlyAssignedCluster!.newClusterId;
 
       dataClone.nodes.splice(newlyAssignedNode.index, 1, newlyAssignedNode);
 
@@ -173,13 +148,13 @@ class Graph extends React.Component<
         {
           renderCounter: 0,
           nodeWithNewlyAssignedCluster: undefined,
-          groupConvexHullCoordinations: {},
-          nodeGroups: {},
+          clusterConvexHullCoordinations: {},
+          nodeClusters: {},
           data: dataClone,
         },
         () => {
           const { nodes } = this.state.data;
-          this.assignNodeGroups(nodes);
+          this.assignNodeClustersStateProperties(nodes);
         }
       );
     }
@@ -228,7 +203,7 @@ class Graph extends React.Component<
     } = kmedoids(this.state.distanceMatrix, nodes, k);
     _.each(nodes, (node) => {
       const { medoid, distanceFromMedoid } = nodeMedoidInfoObjects[node.id];
-      node.medoid = medoid;
+      node.clusterId = medoid;
       node.distanceFromClusterMedoid = distanceFromMedoid;
     });
   };
@@ -242,93 +217,97 @@ class Graph extends React.Component<
 
   private assignNodeColors = (nodes: SharedTypes.Graph.INode[]): void => {
     _.each(nodes, (node) => {
-      const groupIndex: number = Object.values(this.state.nodeGroups).indexOf(
-        node.medoid
+      const clusterId: number = Object.values(this.state.nodeClusters).indexOf(
+        node.clusterId
       );
-      node.color = KELLY_COLOR_PALETTE[groupIndex];
+      node.color = KELLY_COLOR_PALETTE[clusterId];
     });
   };
 
-  private assignNodeGroups = (nodes: SharedTypes.Graph.INode[]): void => {
-    let nodeGroups: { [nodeGroup: number]: number } = {};
-    _.each(nodes, (node: SharedTypes.Graph.INode) => {
-      if (!(node.medoid in nodeGroups)) {
-        nodeGroups[node.medoid] = node.medoid;
-      }
-    });
-    this.setState({ nodeGroups });
-    this.populateNumberOfNodesInGroupObject(nodes);
-  };
-
-  private populateNumberOfNodesInGroupObject = (
+  private assignNodeClustersStateProperties = (
     nodes: SharedTypes.Graph.INode[]
   ): void => {
-    let numberOfNodesInGroupObject: { [group: number]: number } = {};
-    _.each(
-      this.state.nodeGroups,
-      (nodeGroup) => (numberOfNodesInGroupObject[nodeGroup] = 0)
-    );
-    _.each(nodes, (node) => {
-      numberOfNodesInGroupObject[node.medoid] =
-        numberOfNodesInGroupObject[node.medoid] + 1;
+    let nodeClusters: { [clusterId: number]: number } = {};
+    let numberOfNodesInCluster: { [clusterId: number]: number } = {};
+    // let
+
+    _.each(nodes, (node: SharedTypes.Graph.INode) => {
+      if (!(node.clusterId in nodeClusters)) {
+        const nodeCluster: number = node.clusterId;
+        nodeClusters[node.clusterId] = nodeCluster;
+        if (!(nodeCluster in numberOfNodesInCluster)) {
+          numberOfNodesInCluster[nodeCluster] = 1;
+          return;
+        }
+        numberOfNodesInCluster[nodeCluster] += 1;
+      }
     });
-    this.setState({ numberOfNodesInGroupObject });
+    this.setState({
+      nodeClusters,
+      numberOfNodesInCluster,
+    });
   };
 
-  private getGroupConvexHullCoordinations = (): SharedTypes.Graph.IGroupConvexHullCoordinations => {
+  private getClusterConvexHullCoordinations = (): SharedTypes.Graph.IClusterConvexHullCoordinations => {
     const { nodes } = this.state.data;
-    const groupNodesCoordinations: SharedTypes.Graph.IGroupNodeCoordinations = getGroupNodeCoordinations(
+    const clusterNodesCoordinations: SharedTypes.Graph.IClusterNodeCoordinations = getClusterNodeCoordinations(
       nodes
     );
 
-    let groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations = {};
+    let clusterConvexHullCoordinations: SharedTypes.Graph.IClusterConvexHullCoordinations = {};
 
-    _.each(_.keys(groupNodesCoordinations), (medoid) => {
-      const groupKey: number = parseInt(medoid);
-      let x: number[] = groupNodesCoordinations[groupKey].x;
-      let y: number[] = groupNodesCoordinations[groupKey].y;
-      const groupCoordinations: number[][] = x.map((xElem, index) => [
+    _.each(_.keys(clusterNodesCoordinations), (medoid) => {
+      const clusterId: number = parseInt(medoid);
+      let x: number[] = clusterNodesCoordinations[clusterId].x;
+      let y: number[] = clusterNodesCoordinations[clusterId].y;
+      const clusterCoordinations: number[][] = x.map((xElem, index) => [
         xElem,
         y[index],
       ]);
 
-      if (groupCoordinations.length <= 2) {
+      if (clusterCoordinations.length <= 2) {
         const arcCenter: {
           x: number;
           y: number;
-        } = getArcCenterForClustersWithAtMostTwoElements(groupCoordinations);
-        groupConvexHullCoordinations[groupKey] = [[arcCenter.x, arcCenter.y]];
+        } = getArcCenterForClustersWithAtMostTwoElements(clusterCoordinations);
+        clusterConvexHullCoordinations[clusterId] = [
+          [arcCenter.x, arcCenter.y],
+        ];
       } else {
-        groupConvexHullCoordinations[groupKey] = convexHull(groupCoordinations);
+        clusterConvexHullCoordinations[clusterId] = convexHull(
+          clusterCoordinations
+        );
       }
     });
 
-    this.setState({ groupConvexHullCoordinations });
-    return groupConvexHullCoordinations;
+    this.setState({
+      clusterConvexHullCoordinations: clusterConvexHullCoordinations,
+    });
+    return clusterConvexHullCoordinations;
   };
 
   private getPairwiseClusterDistance = (): number => {
-    let pairwiseClusterDistance: number = FORCE_LINK_DIFFERENT_GROUP_DISTANCE;
+    let pairwiseClusterDistance: number = FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE;
     if (
       this.props.pairwiseClusterDistance === PAIRWISE_CLUSTER_DISTANCE.Closer
     ) {
-      pairwiseClusterDistance = FORCE_LINK_DIFFERENT_GROUP_DISTANCE_CLOSER_DISTANCE;
+      pairwiseClusterDistance = FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE_CLOSER_DISTANCE;
     } else if (
       this.props.pairwiseClusterDistance === PAIRWISE_CLUSTER_DISTANCE.Farther
     ) {
-      pairwiseClusterDistance = FORCE_LINK_DIFFERENT_GROUP_DISTANCE_FARTHER_DISTANCE;
+      pairwiseClusterDistance = FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE_FARTHER_DISTANCE;
     }
     return pairwiseClusterDistance;
   };
 
   private getClusterCompactnessValue = (): number => {
-    let clusterCompactnessValue: number = FORCE_LINK_SAME_GROUP_DISTANCE;
+    let clusterCompactnessValue: number = FORCE_LINK_SAME_CLUSTER_DISTANCE;
     if (this.props.clusterCompactness === CLUSTER_COMPACTNESS.LessCompact) {
-      clusterCompactnessValue = FORCE_LINK_SAME_GROUP_DISTANCE_LESS_COMPACT;
+      clusterCompactnessValue = FORCE_LINK_SAME_CLUSTER_DISTANCE_LESS_COMPACT;
     } else if (
       this.props.clusterCompactness === CLUSTER_COMPACTNESS.MoreCompact
     ) {
-      clusterCompactnessValue = FORCE_LINK_SAME_GROUP_DISTANCE_MORE_COMPACT;
+      clusterCompactnessValue = FORCE_LINK_SAME_CLUSTER_DISTANCE_MORE_COMPACT;
     }
     return clusterCompactnessValue;
   };
@@ -344,7 +323,7 @@ class Graph extends React.Component<
       // console.log(
       //   _.find(this.state.data.nodes, (node) => node.id === 10)?.medoid
       // );
-      if (sourceNode?.medoid !== targetNode?.medoid) {
+      if (sourceNode?.clusterId !== targetNode?.clusterId) {
         let pairwiseClusterDistance: number = this.getPairwiseClusterDistance();
         return (
           pairwiseClusterDistance * sourceNode.distances[targetNode.id] * 1.5
@@ -365,16 +344,16 @@ class Graph extends React.Component<
 
   private drawArcForClustersWithAtMostTwoElements = (
     ctx: CanvasRenderingContext2D,
-    groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations,
-    nodeGroup: number
+    clusterConvexHullCoordinations: SharedTypes.Graph.IClusterConvexHullCoordinations,
+    clusterId: number
   ): void => {
-    const groupCoordinations: number[][] =
-      groupConvexHullCoordinations[nodeGroup];
+    const clusterCoordinations: number[][] =
+      clusterConvexHullCoordinations[clusterId];
 
     const arcCenter: {
       x: number;
       y: number;
-    } = { x: groupCoordinations[0][0], y: groupCoordinations[0][1] };
+    } = { x: clusterCoordinations[0][0], y: clusterCoordinations[0][1] };
 
     ctx.arc(
       arcCenter.x,
@@ -387,57 +366,58 @@ class Graph extends React.Component<
   };
 
   private drawClusterHulls = (ctx: CanvasRenderingContext2D): void => {
-    let groupConvexHullCoordinations: SharedTypes.Graph.IGroupConvexHullCoordinations = {};
+    let clusterConvexHullCoordinations: SharedTypes.Graph.IClusterConvexHullCoordinations = {};
 
     let newConvexHulls: boolean = false;
     // draw the convex hulls when component mounts and upon change in cluster membership
     if (
       !this.props.dynamicGraph &&
       _.isEqual(
-        _.keys(this.state.groupConvexHullCoordinations),
-        _.keys(this.state.nodeGroups)
+        _.keys(this.state.clusterConvexHullCoordinations),
+        _.keys(this.state.nodeClusters)
       ) &&
       this.state.renderCounter > 5
     ) {
-      groupConvexHullCoordinations = this.state.groupConvexHullCoordinations;
+      clusterConvexHullCoordinations = this.state
+        .clusterConvexHullCoordinations;
     } else {
-      groupConvexHullCoordinations = this.getGroupConvexHullCoordinations();
+      clusterConvexHullCoordinations = this.getClusterConvexHullCoordinations();
       newConvexHulls = true;
       if (!this.props.dynamicGraph) {
         this.setState({ renderCounter: this.state.renderCounter + 1 });
       }
     }
 
-    _.each(_.values(this.state.nodeGroups), (nodeGroup) => {
+    _.each(_.values(this.state.nodeClusters), (clusterId) => {
       if (
-        groupConvexHullCoordinations != null &&
-        groupConvexHullCoordinations[nodeGroup] != null &&
-        groupConvexHullCoordinations[nodeGroup].length > 0
+        clusterConvexHullCoordinations != null &&
+        clusterConvexHullCoordinations[clusterId] != null &&
+        clusterConvexHullCoordinations[clusterId].length > 0
       ) {
-        ctx.strokeStyle = getGroupColor(this.state.data.nodes, nodeGroup);
+        ctx.strokeStyle = getClusterColor(this.state.data.nodes, clusterId);
         ctx.beginPath();
 
-        _.each(groupConvexHullCoordinations[nodeGroup], (group, index) => {
-          if (group == null || group.length < 2) {
+        _.each(clusterConvexHullCoordinations[clusterId], (cluster, index) => {
+          if (cluster == null || cluster.length < 2) {
             return;
           }
 
-          if (groupConvexHullCoordinations[nodeGroup].length <= 2) {
+          if (clusterConvexHullCoordinations[clusterId].length <= 2) {
             this.drawArcForClustersWithAtMostTwoElements(
               ctx,
-              groupConvexHullCoordinations,
-              nodeGroup
+              clusterConvexHullCoordinations,
+              clusterId
             );
             return;
           }
 
-          ctx.lineTo(group[0], group[1]);
+          ctx.lineTo(cluster[0], cluster[1]);
 
           // draw a line from the last to the first element of the cluster
-          if (index === groupConvexHullCoordinations[nodeGroup].length - 1) {
+          if (index === clusterConvexHullCoordinations[clusterId].length - 1) {
             ctx.lineTo(
-              groupConvexHullCoordinations[nodeGroup][0][0],
-              groupConvexHullCoordinations[nodeGroup][0][1]
+              clusterConvexHullCoordinations[clusterId][0][0],
+              clusterConvexHullCoordinations[clusterId][0][1]
             );
           }
         });
@@ -458,12 +438,12 @@ class Graph extends React.Component<
   private assignNewlyAssignedClusterToNode(
     canvasNode: SharedTypes.Graph.INode
   ): void {
-    const newGroup: number[][] | undefined = _.find(
-      this.state.groupConvexHullCoordinations,
-      (convexHull, groupNumber) => {
+    const newlyAssginedCluster: number[][] | undefined = _.find(
+      this.state.clusterConvexHullCoordinations,
+      (convexHull, clusterId) => {
         if (
           convexHull.length === 1 &&
-          canvasNode.medoid !== parseInt(groupNumber)
+          canvasNode.clusterId !== parseInt(clusterId)
         ) {
           return pointInArc(
             canvasNode.x,
@@ -477,26 +457,26 @@ class Graph extends React.Component<
       }
     );
 
-    if (newGroup == null) {
+    if (newlyAssginedCluster == null) {
       return;
     }
 
-    const key: string | undefined = _.findKey(
-      this.state.groupConvexHullCoordinations,
-      (convexHull) => convexHull === newGroup
+    const cId: string | undefined = _.findKey(
+      this.state.clusterConvexHullCoordinations,
+      (convexHull) => convexHull === newlyAssginedCluster
     );
 
-    if (key == null) {
+    if (cId == null) {
       return;
     }
 
-    const newGroupKey: number = parseInt(key);
+    const newlyAssignedClusterId: number = parseInt(cId);
 
-    if (newGroupKey !== canvasNode.medoid) {
+    if (newlyAssignedClusterId !== canvasNode.clusterId) {
       this.setState({
         nodeWithNewlyAssignedCluster: {
           node: canvasNode,
-          newGroupKey,
+          newClusterId: newlyAssignedClusterId,
         },
       });
     }
