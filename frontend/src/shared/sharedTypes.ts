@@ -33,6 +33,7 @@ export namespace SharedTypes {
 
     export interface IGraphState {
       data: IData;
+      attributeWeightArray: number[];
 
       nodeClusters: { [clusterId: number]: number };
       numberOfNodesInCluster: { [clusterId: number]: number };
@@ -56,6 +57,7 @@ export namespace SharedTypes {
       id: number;
       distances: { [nodeId: number]: number };
       distanceFromClusterMedoid: number;
+      medoidNodeIndex: number;
       nodeLabel: string;
       text: string;
       clusterId: number;
