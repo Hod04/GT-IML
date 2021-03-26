@@ -20,7 +20,10 @@ export default class NodeDrawer extends React.Component<
     prevProps: SharedTypes.NodeDrawer.INodeDrawerProps,
     prevState: SharedTypes.NodeDrawer.INodeDrawerState
   ): void {
-    if (_.isEmpty(prevState.nodeInfo)) {
+    if (
+      _.isEmpty(prevState.nodeInfo) ||
+      !_.isEqual(prevProps.nodes, this.props.nodes)
+    ) {
       this.assignNodeInfo();
     }
   }
