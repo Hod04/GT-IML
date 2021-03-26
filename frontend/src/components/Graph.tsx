@@ -37,6 +37,7 @@ import {
   calculateDistanceMatrix,
   euclideanDistance,
   getDistanceRange,
+  mDistance,
 } from "../helpers/algorithms/calculateDistanceMatrix";
 import { embeddings } from "../helpers/embeddings";
 import { kmedoids } from "../helpers/algorithms/kmedoids";
@@ -49,6 +50,7 @@ class Graph extends React.Component<
     super(props);
     this.state = {
       data: {} as SharedTypes.Graph.IData,
+      attributeWeightArray: _.fill(new Array(200), 1),
 
       nodeClusters: {},
       numberOfNodesInCluster: {},
@@ -67,27 +69,7 @@ class Graph extends React.Component<
   public async componentDidMount(): Promise<void> {
     const dataRes: Response = await fetch("data/data.json");
     const data: SharedTypes.Graph.IData = await dataRes.json();
-
-    this.assignDistanceMatrix();
-
-    this.assignDistanceRange();
-
-    this.assignDistanceObjectsForNodes(data.nodes);
-
-    this.assignClusterObjects(data.nodes, this.props.k);
-
-    this.assignNodeClustersStateProperties(data.nodes);
-
-    this.assignNodeColors(data.nodes);
-
-    this.props.assignNodes(data.nodes);
-
-    this.setState({
-      data: {
-        nodes: data.nodes,
-        links: generateLinks(data.nodes),
-      },
-    });
+    this.constructGraph(data, true);
   }
 
   public componentDidUpdate(
@@ -110,23 +92,68 @@ class Graph extends React.Component<
     }
 
     if (!_.isEqual(prevProps.k, this.props.k)) {
-      const { nodes } = this.state.data;
-      this.assignClusterObjects(nodes, this.props.k);
+      this.constructGraph(this.state.data, false);
+    }
 
-      this.assignNodeClustersStateProperties(nodes);
-
-      this.assignNodeColors(nodes);
-
-      this.props.assignNodes(nodes);
-
-      this.setState({
-        data: {
-          nodes,
-          links: generateLinks(nodes),
-        },
-      });
+    if (
+      !_.isEqual(
+        prevState.attributeWeightArray,
+        this.state.attributeWeightArray
+      )
+    ) {
+      this.constructGraph(this.state.data, false);
     }
   }
+
+  private constructGraph = (
+    data: SharedTypes.Graph.IData,
+    mounted: boolean
+  ): void => {
+    const distanceMatrix: number[][] = this.assignDistanceMatrix();
+    const distanceRange: {
+      min: number;
+      max: number;
+    } = getDistanceRange(distanceMatrix);
+
+    this.assignDistanceObjectsForNodes(data.nodes, distanceMatrix);
+
+    // const _nodeDiffObject: {
+    //   [nodeId: number]: SharedTypes.Graph.INode;
+    // } =
+    // if (mounted)
+    this.assignClusterObjects(data.nodes, this.props.k, distanceMatrix);
+
+    const {
+      nodeClusters,
+      numberOfNodesInCluster,
+    } = this.getNodeClustersStateProperties(data.nodes);
+
+    const clusterColorObject: {
+      [clusterId: number]: string;
+    } = this.getClusterColorObject(
+      data.nodes,
+      nodeClusters,
+      // mounted ? {} : nodeDiffObject
+      {}
+    );
+
+    this.setState(
+      {
+        data: {
+          nodes: data.nodes,
+          links: generateLinks(data.nodes),
+        },
+        distanceMatrix,
+        distanceRange,
+        nodeClusters,
+        numberOfNodesInCluster,
+        clusterColorObject,
+      },
+      () =>
+        // update App.tsx
+        this.props.assignNodes(this.state.data.nodes)
+    );
+  };
 
   private handleNodeClusterMembershipChange = (): void => {
     let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
@@ -138,45 +165,151 @@ class Graph extends React.Component<
     );
 
     if (newlyAssignedNode != null) {
-      // assign the newly assigned node its new cluster & corresponding color
-      newlyAssignedNode.color = this.state.clusterColorObject[
-        newlyAssignedClusterId
-      ];
+      let attributeDistancesFromSourceClusterMedoid: number[] = [];
+      let attributeDistancesFromDestinationClusterMedoid: number[] = [];
 
-      newlyAssignedNode.clusterId = newlyAssignedClusterId;
+      const sourceClusterMedoidIndex: number = _.findIndex(
+        this.state.data.nodes,
+        (node) =>
+          node.clusterId === newlyAssignedNode.clusterId &&
+          node.distanceFromClusterMedoid === 0
+      );
 
-      dataClone.nodes.splice(newlyAssignedNode.index, 1, newlyAssignedNode);
+      const destinationClusterMedoidIndex: number = _.findIndex(
+        this.state.data.nodes,
+        (node) =>
+          node.clusterId === newlyAssignedClusterId &&
+          node.distanceFromClusterMedoid === 0
+      );
 
-      dataClone.links = generateLinks(dataClone.nodes);
+      const newlyAssignedEmbeddingsRow: number[] =
+        embeddings[newlyAssignedNode.index];
+      const sourceClusterMedoidEmbeddingsRow: number[] =
+        embeddings[sourceClusterMedoidIndex];
+      const destinationClusterMedoidEmbeddingsRow: number[] =
+        embeddings[destinationClusterMedoidIndex];
 
-      this.setState(
-        {
-          renderCounter: 0,
-          nodeWithNewlyAssignedCluster: undefined,
-          clusterConvexHullCoordinations: {},
-          nodeClusters: {},
-          data: dataClone,
-        },
-        () => {
-          const { nodes } = this.state.data;
-          this.assignNodeClustersStateProperties(nodes);
+      if (
+        newlyAssignedEmbeddingsRow == null ||
+        sourceClusterMedoidEmbeddingsRow == null ||
+        destinationClusterMedoidEmbeddingsRow == null
+      ) {
+        return;
+      }
+
+      for (let i: number = 0; i < newlyAssignedEmbeddingsRow.length; i++) {
+        attributeDistancesFromSourceClusterMedoid[i] = mDistance(
+          newlyAssignedEmbeddingsRow[i],
+          sourceClusterMedoidEmbeddingsRow[i]
+        );
+        attributeDistancesFromDestinationClusterMedoid[i] = mDistance(
+          newlyAssignedEmbeddingsRow[i],
+          destinationClusterMedoidEmbeddingsRow[i]
+        );
+      }
+
+      const destinationMedoidAttributeSimilarityArray: {
+        value: number;
+        index: number;
+      }[] = _.map(
+        attributeDistancesFromDestinationClusterMedoid,
+        (attribute, index) => {
+          return {
+            value: attribute,
+            index,
+          };
         }
       );
+
+      const sourceMedoidAttributeSimilarityArray: {
+        value: number;
+        index: number;
+      }[] = _.map(
+        attributeDistancesFromSourceClusterMedoid,
+        (attribute, index) => {
+          return {
+            value: attribute,
+            index,
+          };
+        }
+      );
+
+      const sortedDestinationMedoidAttributeSimilarityArray = destinationMedoidAttributeSimilarityArray.sort(
+        (a, b) => a.value - b.value
+      );
+      const sortedSourceMedoidAttributeSimilarityArray = sourceMedoidAttributeSimilarityArray.sort(
+        (a, b) => a.value - b.value
+      );
+
+      let adjustedAttributeWeightArray: number[] = _.clone(
+        this.state.attributeWeightArray
+      );
+
+      _.each(
+        sortedSourceMedoidAttributeSimilarityArray,
+        (elem, itereeIndex: number) => {
+          // dragged node === source medoid
+          if (elem.value === 0) {
+            return;
+          }
+          let adjustedWeightValue: number = 0;
+          if (itereeIndex < 100) {
+            adjustedWeightValue = (100 - itereeIndex) / 200;
+          } else {
+            adjustedWeightValue = -(itereeIndex + 1) / 400;
+          }
+
+          if (
+            adjustedAttributeWeightArray[elem.index] + adjustedWeightValue >
+            0
+          ) {
+            adjustedAttributeWeightArray[elem.index] += adjustedWeightValue;
+          } else {
+            adjustedAttributeWeightArray[elem.index] = 0.001;
+          }
+        }
+      );
+
+      _.each(
+        sortedDestinationMedoidAttributeSimilarityArray,
+        (elem, itereeIndex: number) => {
+          let adjustedWeightValue: number = 0;
+          if (itereeIndex < 100) {
+            adjustedWeightValue = (100 - itereeIndex) / 200;
+          } else {
+            adjustedWeightValue = -(itereeIndex + 1) / 400;
+          }
+
+          if (
+            adjustedAttributeWeightArray[elem.index] + adjustedWeightValue >
+            0
+          ) {
+            adjustedAttributeWeightArray[elem.index] += adjustedWeightValue;
+          } else {
+            adjustedAttributeWeightArray[elem.index] = 0.001;
+          }
+        }
+      );
+
+      this.setState({
+        renderCounter: 0,
+        nodeWithNewlyAssignedCluster: undefined,
+        attributeWeightArray: adjustedAttributeWeightArray,
+      });
     }
   };
 
-  private assignDistanceMatrix = (): void => {
-    const distanceMatrix: number[][] = calculateDistanceMatrix(
+  private assignDistanceMatrix = (): number[][] =>
+    calculateDistanceMatrix(
       embeddings,
       euclideanDistance,
-      1,
+      this.state.attributeWeightArray,
       1
     );
-    this.setState({ distanceMatrix });
-  };
 
   private assignDistanceObjectsForNodes = (
-    nodes: SharedTypes.Graph.INode[]
+    nodes: SharedTypes.Graph.INode[],
+    distanceMatrix: number[][]
   ): void => {
     let nodeIds: number[] = [];
     _.each(nodes, (node) => {
@@ -189,45 +322,61 @@ class Graph extends React.Component<
       } = {};
       _.each(nodeIds, (nodeId, nodeIdIndex) => {
         if (nodeId !== node.id) {
-          distanceObj[nodeId] = this.state.distanceMatrix[index][nodeIdIndex];
+          distanceObj[nodeId] = distanceMatrix[index][nodeIdIndex];
         }
       });
       node.distances = distanceObj;
     });
   };
 
+  // and return node diff
   private assignClusterObjects = (
     nodes: SharedTypes.Graph.INode[],
-    k: number
-  ): void => {
-    const nodeMedoidInfoObjects: {
-      [nodeId: number]: {
-        medoid: number;
-        distanceFromMedoid: number;
+    k: number,
+    distanceMatrix: number[][]
+  ): { [nodeId: number]: SharedTypes.Graph.INode } => {
+    const {
+      nodeMedoidInfoObjects,
+      medoidObject,
+    }: {
+      nodeMedoidInfoObjects: {
+        [nodeId: number]: {
+          medoid: number;
+          distanceFromMedoid: number;
+        };
       };
-    } = kmedoids(this.state.distanceMatrix, nodes, k);
+      medoidObject: { [medoid: number]: number };
+    } = kmedoids(distanceMatrix, nodes, k);
+    let nodeDiffObject: { [nodeId: number]: SharedTypes.Graph.INode } = {};
     _.each(nodes, (node) => {
       const { medoid, distanceFromMedoid } = nodeMedoidInfoObjects[node.id];
+      if (
+        node.clusterId !== medoid &&
+        node.distanceFromClusterMedoid !== distanceFromMedoid &&
+        node.medoidNodeIndex !== medoidObject[node.clusterId]
+      ) {
+        nodeDiffObject[node.id] = node;
+      }
       node.clusterId = medoid;
       node.distanceFromClusterMedoid = distanceFromMedoid;
+      node.medoidNodeIndex = medoidObject[node.clusterId];
     });
+
+    return nodeDiffObject;
   };
 
-  private assignDistanceRange = (): void => {
-    const distanceRange: { min: number; max: number } = getDistanceRange(
-      this.state.distanceMatrix
-    );
-    this.setState({ distanceRange });
-  };
-
-  private assignNodeColors = (nodes: SharedTypes.Graph.INode[]): void => {
+  private getClusterColorObject = (
+    nodes: SharedTypes.Graph.INode[],
+    nodeClusters: { [clusterId: number]: number },
+    nodeDiffObject: { [nodeId: number]: SharedTypes.Graph.INode }
+  ): { [clusterId: number]: string } => {
     let clusterColorObject: { [clusterId: number]: string } = {};
 
     _.each(nodes, (node) => {
       const clusterId: number = node.clusterId;
-      const clusterIndex: number = Object.values(
-        this.state.nodeClusters
-      ).indexOf(clusterId);
+      const clusterIndex: number = Object.values(nodeClusters).indexOf(
+        clusterId
+      );
       const nodeColor: string = KELLY_COLOR_PALETTE[clusterIndex];
 
       node.color = nodeColor;
@@ -235,14 +384,21 @@ class Graph extends React.Component<
       if (!(node.clusterId in clusterColorObject)) {
         clusterColorObject[clusterId] = nodeColor;
       }
+
+      if (node.id in nodeDiffObject) {
+        node.color = "pink";
+      }
     });
 
-    this.setState({ clusterColorObject });
+    return clusterColorObject;
   };
 
-  private assignNodeClustersStateProperties = (
+  private getNodeClustersStateProperties = (
     nodes: SharedTypes.Graph.INode[]
-  ): void => {
+  ): {
+    nodeClusters: { [clusterId: number]: number };
+    numberOfNodesInCluster: { [clusterId: number]: number };
+  } => {
     let nodeClusters: { [clusterId: number]: number } = {};
     let numberOfNodesInCluster: { [clusterId: number]: number } = {};
 
@@ -257,10 +413,7 @@ class Graph extends React.Component<
         numberOfNodesInCluster[nodeCluster] += 1;
       }
     });
-    this.setState({
-      nodeClusters,
-      numberOfNodesInCluster,
-    });
+    return { nodeClusters, numberOfNodesInCluster };
   };
 
   private getClusterConvexHullCoordinations = (): SharedTypes.Graph.IClusterConvexHullCoordinations => {
@@ -335,9 +488,6 @@ class Graph extends React.Component<
     forceFn?.distance((link: SharedTypes.Graph.ILink) => {
       const sourceNode: SharedTypes.Graph.INode = link.source;
       const targetNode: SharedTypes.Graph.INode = link.target;
-      // console.log(
-      //   _.find(this.state.data.nodes, (node) => node.id === 10)?.medoid
-      // );
       if (sourceNode?.clusterId !== targetNode?.clusterId) {
         let pairwiseClusterDistance: number = this.getPairwiseClusterDistance();
         return (
@@ -346,7 +496,7 @@ class Graph extends React.Component<
       } else {
         let clusterCompactnessValue: number = this.getClusterCompactnessValue();
         return (
-          clusterCompactnessValue * sourceNode.distances[targetNode.id] * 1.5
+          clusterCompactnessValue * sourceNode.distances[targetNode.id] * 5
         );
       }
     });
