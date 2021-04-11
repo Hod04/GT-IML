@@ -5,6 +5,7 @@ import NavBar from "./components/NavBar";
 import NodeDrawer from "./components/NodeDrawer";
 import {
   CLUSTER_COMPACTNESS,
+  IActionType,
   PAIRWISE_CLUSTER_DISTANCE,
 } from "./helpers/constants";
 import { SharedTypes } from "./shared/sharedTypes";
@@ -14,6 +15,7 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
     super(props);
     this.state = {
       nodes: [],
+      clusterNodes: [],
       nodeDrawerOpen: false,
       nodeDrawerContent: {
         author: "",
@@ -24,75 +26,97 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
       },
       dynamicGraph: true,
       showEdges: false,
+      showClusterCentroids: false,
       clusterCompactness: CLUSTER_COMPACTNESS.ClusterCompactness,
       pairwiseClusterDistance:
         PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance,
       k: 8,
+      attributeWeightDialogOpen: false,
     };
   }
 
-  private assignNodes = (nodes: SharedTypes.Graph.INode[]): void =>
-    this.setState({ nodes });
+  private reducer = (
+    state: SharedTypes.App.IAppState,
+    action: SharedTypes.App.IAction
+  ) =>
+    this.setState(() => {
+      switch (action.type) {
+        case IActionType.ASSIGN_NODES:
+          const assignNodesAction: SharedTypes.App.IAssignNodesAction = action as SharedTypes.App.IAssignNodesAction;
+          return { ...state, nodes: assignNodesAction.payload };
 
-  private toggleNodeDrawer = (): void =>
-    this.setState({ nodeDrawerOpen: !this.state.nodeDrawerOpen });
+        case IActionType.ASSIGN_CLUSTER_NODES:
+          const assignClusterNodesAction: SharedTypes.App.IAssignClusterNodesAction = action as SharedTypes.App.IAssignClusterNodesAction;
+          return { ...state, clusterNodes: assignClusterNodesAction.payload };
 
-  private toggleDynamicGraph = (): void =>
-    this.setState({ dynamicGraph: !this.state.dynamicGraph });
+        case IActionType.ASSIGN_K:
+          const assignKAction: SharedTypes.App.IAssignKAction = action as SharedTypes.App.IAssignKAction;
+          return { ...state, k: assignKAction.payload };
 
-  private toggleShowEdges = (): void =>
-    this.setState({ showEdges: !this.state.showEdges });
+        case IActionType.ASSIGN_NODE_DRAWER_CONTENT:
+          const assignNodeDrawerContentAction: SharedTypes.App.IAssignNodeDrawerContentAction = action as SharedTypes.App.IAssignNodeDrawerContentAction;
+          return {
+            ...state,
+            nodeDrawerContent: assignNodeDrawerContentAction.payload,
+          };
 
-  private assignClusterCompactness = (
-    clusterCompactness: CLUSTER_COMPACTNESS
-  ): void => this.setState({ clusterCompactness });
+        case IActionType.ASSIGN_CLUSTER_COMPACTNESS:
+          const assignClusterCompactnessAction: SharedTypes.App.IAssignClusterCompactnessAction = action as SharedTypes.App.IAssignClusterCompactnessAction;
+          return {
+            ...state,
+            clusterCompactness: assignClusterCompactnessAction.payload,
+          };
 
-  private assignPairwiseClusterDistance = (
-    pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE
-  ): void => this.setState({ pairwiseClusterDistance });
+        case IActionType.ASSIGN_PAIRWISE_CLUSTER_DISTANCE:
+          const assignPairwiseClusterDistanceAction: SharedTypes.App.IAssignPairwiseClusterDistanceAction = action as SharedTypes.App.IAssignPairwiseClusterDistanceAction;
+          return {
+            ...state,
+            pairwiseClusterDistance:
+              assignPairwiseClusterDistanceAction.payload,
+          };
 
-  private assignNodeDrawerContent = (
-    nodeObject: SharedTypes.Graph.INode
-  ): void => {
-    this.setState({
-      nodeDrawerContent: {
-        ...nodeObject,
-      },
+        case IActionType.TOGGLE_NODE_DRAWER:
+          return { ...state, nodeDrawerOpen: !state.nodeDrawerOpen };
+
+        case IActionType.TOGGLE_SHOW_EDGES:
+          return { ...state, showEdges: !state.showEdges };
+
+        case IActionType.TOGGLE_SHOW_CLUSTER_CENTROIDS:
+          return {
+            ...state,
+            showClusterCentroids: !state.showClusterCentroids,
+          };
+
+        case IActionType.TOGGLE_ATTRIBUTE_WEIGHT_DIALOG:
+          return {
+            ...state,
+            attributeWeightDialogOpen: !state.attributeWeightDialogOpen,
+          };
+
+        case IActionType.TOGGLE_DYNAMIC_GRAPH:
+          return {
+            ...state,
+            dynamicGraph: !state.dynamicGraph,
+          };
+
+        default:
+          return state;
+      }
     });
-  };
-
-  private assignK = (k: number): void => this.setState({ k });
 
   render() {
     return (
       <>
-        <NavBar
-          dynamicGraph={this.state.dynamicGraph}
-          showEdges={this.state.showEdges}
-          k={this.state.k}
-          toggleDynamicGraph={this.toggleDynamicGraph}
-          toggleShowEdges={this.toggleShowEdges}
-          assignClusterCompactness={this.assignClusterCompactness}
-          assignPairwiseClusterDistance={this.assignPairwiseClusterDistance}
-          assignK={this.assignK}
-        />
-        <Graph
-          assignNodes={this.assignNodes}
-          isNodeDrawerOpen={this.state.nodeDrawerOpen}
-          toggleNodeDrawer={this.toggleNodeDrawer}
-          assignNodeDrawerContent={this.assignNodeDrawerContent}
-          dynamicGraph={this.state.dynamicGraph}
-          showEdges={this.state.showEdges}
-          clusterCompactness={this.state.clusterCompactness}
-          pairwiseClusterDistance={this.state.pairwiseClusterDistance}
-          k={this.state.k}
-        />
+        <NavBar store={this.state} reducer={this.reducer} />
+        <Graph store={this.state} reducer={this.reducer} />
         {!_.isEmpty(this.state.nodes) && (
           <NodeDrawer
-            nodes={this.state.nodes}
-            toggleNodeDrawer={this.toggleNodeDrawer}
-            isOpen={this.state.nodeDrawerOpen}
-            content={this.state.nodeDrawerContent}
+            store={this.state}
+            reducer={this.reducer}
+            nodes={this.state.nodes.slice(
+              0,
+              this.state.nodes.length - this.state.clusterNodes.length
+            )}
           />
         )}
       </>

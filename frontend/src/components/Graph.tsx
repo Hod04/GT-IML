@@ -26,21 +26,32 @@ import {
   ZOOM_TO_FIT_DURATION,
   ZOOM_TO_FIT_PADDING,
   KELLY_COLOR_PALETTE,
+  DEFAULT_COLOR,
 } from "../helpers/constants";
 import {
   generateLinks,
   getArcCenterForClustersWithAtMostTwoElements,
   getClusterNodeCoordinations,
+  isClusterNode,
 } from "../helpers/graphHelpers/graphHelpers";
 import { getColorAccordingToPairwiseDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
 import {
   calculateDistanceMatrix,
   euclideanDistance,
   getDistanceRange,
-  mDistance,
+  manhattanDistance,
 } from "../helpers/algorithms/calculateDistanceMatrix";
 import { embeddings } from "../helpers/embeddings";
-import { kmedoids } from "../helpers/algorithms/kmedoids";
+import { kMeans } from "../helpers/graphHelpers/kmeans";
+import { Dialog } from "@blueprintjs/core";
+import {
+  assignClusterNodes,
+  assignK,
+  assignNodeDrawerContent,
+  assignNodes,
+  toggleAttributeWeightDialog,
+  toggleNodeDrawer,
+} from "../actions/actions";
 
 class Graph extends React.Component<
   SharedTypes.Graph.IGraphProps,
@@ -51,7 +62,9 @@ class Graph extends React.Component<
     this.state = {
       data: {} as SharedTypes.Graph.IData,
       attributeWeightArray: _.fill(new Array(200), 1),
+      weightedEmbeddings: embeddings,
 
+      clusters: [],
       nodeClusters: {},
       numberOfNodesInCluster: {},
       clusterConvexHullCoordinations: {},
@@ -61,6 +74,7 @@ class Graph extends React.Component<
       distanceMatrix: [],
 
       renderCounter: 0,
+      sortedTable: false,
     };
   }
 
@@ -69,7 +83,7 @@ class Graph extends React.Component<
   public async componentDidMount(): Promise<void> {
     const dataRes: Response = await fetch("data/data.json");
     const data: SharedTypes.Graph.IData = await dataRes.json();
-    this.constructGraph(data, true);
+    this.constructGraph(data, true, true);
   }
 
   public componentDidUpdate(
@@ -77,328 +91,637 @@ class Graph extends React.Component<
     prevState: SharedTypes.Graph.IGraphState
   ): void {
     if (this.state.nodeWithNewlyAssignedCluster != null) {
-      this.handleNodeClusterMembershipChange();
+      this.constructGraph(this.state.data, false, false);
     }
 
     if (
-      !_.isEqual(prevProps.clusterCompactness, this.props.clusterCompactness) ||
       !_.isEqual(
-        prevProps.pairwiseClusterDistance,
-        this.props.pairwiseClusterDistance
+        prevProps.store.clusterCompactness,
+        this.props.store.clusterCompactness
       ) ||
-      !_.isEqual(prevProps.dynamicGraph, this.props.dynamicGraph)
+      !_.isEqual(
+        prevProps.store.pairwiseClusterDistance,
+        this.props.store.pairwiseClusterDistance
+      ) ||
+      !_.isEqual(prevProps.store.dynamicGraph, this.props.store.dynamicGraph) ||
+      !_.isEqual(
+        prevProps.store.showClusterCentroids,
+        this.props.store.showClusterCentroids
+      )
     ) {
       this.graphRef.current.d3ReheatSimulation();
     }
 
-    if (!_.isEqual(prevProps.k, this.props.k)) {
-      this.constructGraph(this.state.data, false);
-    }
-
     if (
-      !_.isEqual(
-        prevState.attributeWeightArray,
-        this.state.attributeWeightArray
-      )
+      !_.isEqual(prevProps.store.k, this.props.store.k) &&
+      !_.isEmpty(this.state.clusters)
     ) {
-      this.constructGraph(this.state.data, false);
+      this.constructGraph(this.state.data, true, false);
     }
   }
 
+  private dispatch = async (action: SharedTypes.App.IAction): Promise<void> =>
+    await this.props.reducer(this.props.store, action);
+
   private constructGraph = (
     data: SharedTypes.Graph.IData,
-    mounted: boolean
+    constructGraphFromGroundUp: boolean,
+    componentMounted: boolean
   ): void => {
-    const distanceMatrix: number[][] = this.assignDistanceMatrix();
+    const nodeClusterMembershipCounterLimit: number = 100;
+    let nodeClusterMembershipChangeCounter: number = 0;
+
+    let nodeDiffObject: { [nodeId: number]: SharedTypes.Graph.INode } = {};
+    let clusters: number[][] = [];
+    let newlyConstructedNodes: SharedTypes.Graph.INode[] = _.clone(data.nodes);
+
+    let adjustedWeightedEmbeddings: number[][] | undefined = [];
+    let clusterObjectsInfo: SharedTypes.Graph.IClusterObjectInfo = {} as SharedTypes.Graph.IClusterObjectInfo;
+
+    if (!constructGraphFromGroundUp) {
+      while (
+        nodeClusterMembershipChangeCounter <
+          nodeClusterMembershipCounterLimit &&
+        this.state.nodeWithNewlyAssignedCluster != null &&
+        this.state.nodeWithNewlyAssignedCluster.node.clusterId !==
+          this.state.nodeWithNewlyAssignedCluster.newClusterId
+      ) {
+        adjustedWeightedEmbeddings = this.handleNodeClusterMembershipChange(
+          this.state.attributeWeightArray,
+          adjustedWeightedEmbeddings,
+          nodeClusterMembershipChangeCounter
+        );
+
+        clusterObjectsInfo = this.getClusterObjectInfo(
+          newlyConstructedNodes,
+          this.props.store.k,
+          adjustedWeightedEmbeddings != null &&
+            !_.isEmpty(adjustedWeightedEmbeddings)
+            ? adjustedWeightedEmbeddings
+            : this.state.weightedEmbeddings,
+          this.state.clusters,
+          componentMounted,
+          nodeClusterMembershipChangeCounter
+        );
+        nodeDiffObject = clusterObjectsInfo.nodeDiffObject;
+        clusters = clusterObjectsInfo.clusters;
+        newlyConstructedNodes =
+          clusterObjectsInfo.nodesWithNewlyAssignedClusters;
+        adjustedWeightedEmbeddings =
+          clusterObjectsInfo.weightedEmbeddingsIncludingClusterCentroids;
+        nodeClusterMembershipChangeCounter++;
+      }
+    } else {
+      clusterObjectsInfo = this.getClusterObjectInfo(
+        newlyConstructedNodes,
+        this.props.store.k,
+        adjustedWeightedEmbeddings != null &&
+          !_.isEmpty(adjustedWeightedEmbeddings)
+          ? adjustedWeightedEmbeddings
+          : this.state.weightedEmbeddings,
+        // let k-means generate random centroids for us when firstly constructing the graph
+        [],
+        componentMounted
+      );
+      clusters = clusterObjectsInfo.clusters;
+      newlyConstructedNodes = clusterObjectsInfo.nodesWithNewlyAssignedClusters;
+      adjustedWeightedEmbeddings =
+        clusterObjectsInfo.weightedEmbeddingsIncludingClusterCentroids;
+    }
+
+    const distanceMatrix: number[][] = this.getDistanceMatrix(
+      adjustedWeightedEmbeddings != null &&
+        !_.isEmpty(adjustedWeightedEmbeddings)
+        ? adjustedWeightedEmbeddings
+        : this.state.weightedEmbeddings
+    );
+
     const distanceRange: {
       min: number;
       max: number;
     } = getDistanceRange(distanceMatrix);
 
-    this.assignDistanceObjectsForNodes(data.nodes, distanceMatrix);
-
-    // const _nodeDiffObject: {
-    //   [nodeId: number]: SharedTypes.Graph.INode;
-    // } =
-    // if (mounted)
-    this.assignClusterObjects(data.nodes, this.props.k, distanceMatrix);
+    newlyConstructedNodes = this.getDistanceObjectsForNodes(
+      newlyConstructedNodes,
+      distanceMatrix
+    );
 
     const {
       nodeClusters,
       numberOfNodesInCluster,
-    } = this.getNodeClustersStateProperties(data.nodes);
+    } = this.getNodeClustersStateProperties(newlyConstructedNodes);
 
-    const clusterColorObject: {
-      [clusterId: number]: string;
-    } = this.getClusterColorObject(
-      data.nodes,
+    const {
+      clusterColorObject,
+      nodesWithNewlyAssignedColors,
+    } = this.getClusterColorObjectInfo(
+      newlyConstructedNodes,
       nodeClusters,
-      // mounted ? {} : nodeDiffObject
-      {}
+      nodeDiffObject
     );
+
+    newlyConstructedNodes = nodesWithNewlyAssignedColors;
 
     this.setState(
       {
         data: {
-          nodes: data.nodes,
-          links: generateLinks(data.nodes),
+          nodes: newlyConstructedNodes,
+          links: generateLinks(
+            newlyConstructedNodes,
+            constructGraphFromGroundUp
+          ),
         },
+        weightedEmbeddings: adjustedWeightedEmbeddings,
         distanceMatrix,
         distanceRange,
         nodeClusters,
         numberOfNodesInCluster,
         clusterColorObject,
+        clusters,
+        nodeWithNewlyAssignedCluster: undefined,
       },
-      () =>
-        // update App.tsx
-        this.props.assignNodes(this.state.data.nodes)
+      async () => {
+        await this.dispatch(assignNodes(this.state.data.nodes));
+        await this.dispatch(
+          assignClusterNodes(
+            this.state.data.nodes.slice(
+              this.state.data.nodes.length - this.state.clusters.length
+            )
+          )
+        );
+      }
     );
   };
 
-  private handleNodeClusterMembershipChange = (): void => {
+  private clusterMembershipChangeAlgorithm = (
+    attributeWeightArray?: number[],
+    adjustedWeightedEmbeddings?: number[][],
+    algorithmIterations?: number
+  ): SharedTypes.Graph.IClusterMembershipChangeAlgorithm | undefined => {
+    if (this.state.nodeWithNewlyAssignedCluster == null) {
+      return;
+    }
+
     let dataClone: SharedTypes.Graph.IData = _.clone(this.state.data);
+    let adjustedEmbeddings: number[][] = _.clone(
+      adjustedWeightedEmbeddings != null &&
+        !_.isEmpty(adjustedWeightedEmbeddings)
+        ? adjustedWeightedEmbeddings
+        : this.state.weightedEmbeddings
+    );
+    let adjustedAttributeWeightArray: number[] =
+      attributeWeightArray != null
+        ? attributeWeightArray
+        : _.clone(this.state.attributeWeightArray);
+
     const newlyAssignedClusterId: number = this.state
-      .nodeWithNewlyAssignedCluster!.newClusterId;
+      .nodeWithNewlyAssignedCluster.newClusterId;
     const newlyAssignedNode: SharedTypes.Graph.INode | undefined = _.find(
       dataClone.nodes,
       (node) => node.id === this.state.nodeWithNewlyAssignedCluster!.node.id
     );
 
-    if (newlyAssignedNode != null) {
-      let attributeDistancesFromSourceClusterMedoid: number[] = [];
-      let attributeDistancesFromDestinationClusterMedoid: number[] = [];
-
-      const sourceClusterMedoidIndex: number = _.findIndex(
-        this.state.data.nodes,
-        (node) =>
-          node.clusterId === newlyAssignedNode.clusterId &&
-          node.distanceFromClusterMedoid === 0
-      );
-
-      const destinationClusterMedoidIndex: number = _.findIndex(
-        this.state.data.nodes,
-        (node) =>
-          node.clusterId === newlyAssignedClusterId &&
-          node.distanceFromClusterMedoid === 0
-      );
-
-      const newlyAssignedEmbeddingsRow: number[] =
-        embeddings[newlyAssignedNode.index];
-      const sourceClusterMedoidEmbeddingsRow: number[] =
-        embeddings[sourceClusterMedoidIndex];
-      const destinationClusterMedoidEmbeddingsRow: number[] =
-        embeddings[destinationClusterMedoidIndex];
-
-      if (
-        newlyAssignedEmbeddingsRow == null ||
-        sourceClusterMedoidEmbeddingsRow == null ||
-        destinationClusterMedoidEmbeddingsRow == null
-      ) {
-        return;
-      }
-
-      for (let i: number = 0; i < newlyAssignedEmbeddingsRow.length; i++) {
-        attributeDistancesFromSourceClusterMedoid[i] = mDistance(
-          newlyAssignedEmbeddingsRow[i],
-          sourceClusterMedoidEmbeddingsRow[i]
-        );
-        attributeDistancesFromDestinationClusterMedoid[i] = mDistance(
-          newlyAssignedEmbeddingsRow[i],
-          destinationClusterMedoidEmbeddingsRow[i]
-        );
-      }
-
-      const destinationMedoidAttributeSimilarityArray: {
-        value: number;
-        index: number;
-      }[] = _.map(
-        attributeDistancesFromDestinationClusterMedoid,
-        (attribute, index) => {
-          return {
-            value: attribute,
-            index,
-          };
-        }
-      );
-
-      const sourceMedoidAttributeSimilarityArray: {
-        value: number;
-        index: number;
-      }[] = _.map(
-        attributeDistancesFromSourceClusterMedoid,
-        (attribute, index) => {
-          return {
-            value: attribute,
-            index,
-          };
-        }
-      );
-
-      const sortedDestinationMedoidAttributeSimilarityArray = destinationMedoidAttributeSimilarityArray.sort(
-        (a, b) => a.value - b.value
-      );
-      const sortedSourceMedoidAttributeSimilarityArray = sourceMedoidAttributeSimilarityArray.sort(
-        (a, b) => a.value - b.value
-      );
-
-      let adjustedAttributeWeightArray: number[] = _.clone(
-        this.state.attributeWeightArray
-      );
-
-      _.each(
-        sortedSourceMedoidAttributeSimilarityArray,
-        (elem, itereeIndex: number) => {
-          // dragged node === source medoid
-          if (elem.value === 0) {
-            return;
-          }
-          let adjustedWeightValue: number = 0;
-          if (itereeIndex < 100) {
-            adjustedWeightValue = (100 - itereeIndex) / 200;
-          } else {
-            adjustedWeightValue = -(itereeIndex + 1) / 400;
-          }
-
-          if (
-            adjustedAttributeWeightArray[elem.index] + adjustedWeightValue >
-            0
-          ) {
-            adjustedAttributeWeightArray[elem.index] += adjustedWeightValue;
-          } else {
-            adjustedAttributeWeightArray[elem.index] = 0.001;
-          }
-        }
-      );
-
-      _.each(
-        sortedDestinationMedoidAttributeSimilarityArray,
-        (elem, itereeIndex: number) => {
-          let adjustedWeightValue: number = 0;
-          if (itereeIndex < 100) {
-            adjustedWeightValue = (100 - itereeIndex) / 200;
-          } else {
-            adjustedWeightValue = -(itereeIndex + 1) / 400;
-          }
-
-          if (
-            adjustedAttributeWeightArray[elem.index] + adjustedWeightValue >
-            0
-          ) {
-            adjustedAttributeWeightArray[elem.index] += adjustedWeightValue;
-          } else {
-            adjustedAttributeWeightArray[elem.index] = 0.001;
-          }
-        }
-      );
-
-      this.setState({
-        renderCounter: 0,
-        nodeWithNewlyAssignedCluster: undefined,
-        attributeWeightArray: adjustedAttributeWeightArray,
-      });
+    if (newlyAssignedNode == null) {
+      return;
     }
+
+    let attributeDistancesFromSourceClusterCentroid: number[] = [];
+    let attributeDistancesFromDestinationClusterCentroid: number[] = [];
+
+    const newlyAssignedEmbeddingsRow: number[] = this.state.weightedEmbeddings[
+      newlyAssignedNode.index
+    ];
+    const sourceClusterCentroidEmbeddingsRow: number[] = this.state.clusters[
+      newlyAssignedNode.clusterId
+    ];
+    const destinationClusterCentroidEmbeddingsRow: number[] = this.state
+      .clusters[newlyAssignedClusterId];
+
+    // if cluster membership hasn't changed
+    if (algorithmIterations) {
+      let destinationClusterEmbeddingsEntry: number[] = this.state.clusters[
+        this.state.nodeWithNewlyAssignedCluster.newClusterId
+      ];
+
+      const weightEmbeddingsEntry = (
+        nodeEmbeddingsEntry: number[],
+        destinationEmbeddingsEntry: number[],
+        weightingDivider: number
+      ): number[] => {
+        let weightedEmbeddingsEntry: number[] = _.clone(nodeEmbeddingsEntry);
+
+        if (algorithmIterations > 75) {
+          return destinationClusterEmbeddingsEntry;
+        }
+
+        _.each(weightedEmbeddingsEntry, (movedElem, idx) => {
+          const destinationElem: number = destinationEmbeddingsEntry[idx];
+          const absoluteDestinationValue: number =
+            Math.abs(destinationElem) / weightingDivider;
+          if (Math.abs(movedElem) > Math.abs(destinationElem)) {
+            if (movedElem < 0) {
+              weightedEmbeddingsEntry[idx] += absoluteDestinationValue;
+            } else {
+              weightedEmbeddingsEntry[idx] -= absoluteDestinationValue;
+            }
+          } else {
+            if (
+              (movedElem < 0 && destinationElem > 0) ||
+              (movedElem > 0 && destinationElem < 0)
+            ) {
+              weightedEmbeddingsEntry[idx] -= absoluteDestinationValue;
+            } else {
+              weightedEmbeddingsEntry[idx] += absoluteDestinationValue;
+            }
+          }
+        });
+        return weightedEmbeddingsEntry;
+      };
+
+      const movedNodeEmbeddingsEntry: number[] = weightEmbeddingsEntry(
+        adjustedEmbeddings[this.state.nodeWithNewlyAssignedCluster.node.index],
+        destinationClusterEmbeddingsEntry,
+        20
+      );
+
+      let adjustedNodeEntries: { [nodeIndex: number]: number[] } = {
+        [newlyAssignedNode.index]: movedNodeEmbeddingsEntry,
+      };
+
+      const isNodeFromSourceCluster = (
+        node: SharedTypes.Graph.INode
+      ): boolean =>
+        node.clusterId === newlyAssignedNode.clusterId &&
+        node.id !== newlyAssignedNode.id;
+
+      if (algorithmIterations < 5) {
+        _.each(dataClone.nodes, (node) => {
+          let sourceClusterNodeEmbeddingEntry: number[] = [];
+          let differentClusterNodeEmbeddingEntry: number[] = [];
+
+          if (isNodeFromSourceCluster(node)) {
+            if (node.distances[newlyAssignedNode.id] < 0.25) {
+              sourceClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
+                adjustedEmbeddings[node.index],
+                destinationClusterEmbeddingsEntry,
+                100
+              );
+            } else if (node.distances[newlyAssignedNode.id] > 0.75) {
+              sourceClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
+                adjustedEmbeddings[node.index],
+                destinationClusterEmbeddingsEntry,
+                -100
+              );
+              adjustedNodeEntries[node.index] = sourceClusterNodeEmbeddingEntry;
+            }
+          } else if (node.id !== newlyAssignedNode.id) {
+            if (node.distances[newlyAssignedNode.id] < 0.25) {
+              differentClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
+                adjustedEmbeddings[node.index],
+                destinationClusterEmbeddingsEntry,
+                100
+              );
+            } else if (node.distances[newlyAssignedNode.id] > 0.75) {
+              differentClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
+                adjustedEmbeddings[node.index],
+                destinationClusterEmbeddingsEntry,
+                -100
+              );
+              adjustedNodeEntries[
+                node.index
+              ] = differentClusterNodeEmbeddingEntry;
+            }
+          }
+        });
+      }
+
+      _.each(adjustedNodeEntries, (entry, key) =>
+        adjustedEmbeddings.splice(parseInt(key), 1, entry)
+      );
+
+      return {
+        newlyAssignedNode,
+        newlyAssignedClusterId,
+        adjustedAttributeWeightArray,
+        adjustedEmbeddings,
+      };
+    }
+
+    if (
+      newlyAssignedEmbeddingsRow == null ||
+      sourceClusterCentroidEmbeddingsRow == null ||
+      destinationClusterCentroidEmbeddingsRow == null
+    ) {
+      return;
+    }
+
+    for (let i: number = 0; i < newlyAssignedEmbeddingsRow.length; i++) {
+      attributeDistancesFromSourceClusterCentroid[i] = manhattanDistance(
+        newlyAssignedEmbeddingsRow[i],
+        sourceClusterCentroidEmbeddingsRow[i]
+      );
+      attributeDistancesFromDestinationClusterCentroid[i] = manhattanDistance(
+        newlyAssignedEmbeddingsRow[i],
+        destinationClusterCentroidEmbeddingsRow[i]
+      );
+    }
+
+    const destinationCentroidAttributeSimilarityArray: {
+      value: number;
+      index: number;
+    }[] = _.map(
+      attributeDistancesFromDestinationClusterCentroid,
+      (attribute, index) => {
+        return {
+          value: attribute,
+          index,
+        };
+      }
+    );
+
+    const sourceCentroidAttributeSimilarityArray: {
+      value: number;
+      index: number;
+    }[] = _.map(
+      attributeDistancesFromSourceClusterCentroid,
+      (attribute, index) => {
+        return {
+          value: attribute,
+          index,
+        };
+      }
+    );
+
+    const sortedDestinationCentroidAttributeSimilarityArray = destinationCentroidAttributeSimilarityArray.sort(
+      (a, b) => a.value - b.value
+    );
+    const sortedSourceCentroidAttributeSimilarityArray = sourceCentroidAttributeSimilarityArray.sort(
+      (a, b) => a.value - b.value
+    );
+
+    _.each(
+      sortedSourceCentroidAttributeSimilarityArray,
+      (elem, itereeIndex: number) => {
+        let adjustedWeightValue: number = 0;
+        if (itereeIndex < 100) {
+          adjustedWeightValue = (100 - itereeIndex) / 1600;
+        } else {
+          adjustedWeightValue = -(itereeIndex + 1) / 3200;
+        }
+
+        // deminish adjust weight value
+        if (adjustedWeightValue < 0) {
+          adjustedWeightValue /= 5;
+        }
+
+        if (
+          adjustedAttributeWeightArray[elem.index] + adjustedWeightValue >
+          0
+        ) {
+          adjustedAttributeWeightArray[elem.index] += adjustedWeightValue;
+        } else {
+          adjustedAttributeWeightArray[elem.index] = 0.000000000000001;
+        }
+      }
+    );
+
+    _.each(
+      sortedDestinationCentroidAttributeSimilarityArray,
+      (elem, itereeIndex: number) => {
+        let adjustedWeightValue: number = 0;
+        if (itereeIndex < 100) {
+          adjustedWeightValue = (100 - itereeIndex) / 1600;
+        } else {
+          adjustedWeightValue = -(itereeIndex + 1) / 3200;
+        }
+
+        // deminish adjust weight value
+        if (adjustedWeightValue < 0) {
+          adjustedWeightValue /= 5;
+        }
+
+        if (
+          adjustedAttributeWeightArray[elem.index] + adjustedWeightValue >
+          0
+        ) {
+          adjustedAttributeWeightArray[elem.index] += adjustedWeightValue;
+        } else {
+          adjustedAttributeWeightArray[elem.index] = 0.000000000000001;
+        }
+      }
+    );
+
+    return {
+      newlyAssignedNode,
+      newlyAssignedClusterId,
+      adjustedAttributeWeightArray,
+      adjustedEmbeddings,
+    };
   };
 
-  private assignDistanceMatrix = (): number[][] =>
+  private handleNodeClusterMembershipChange = (
+    attributeWeightArray?: number[],
+    adjustedWeightedEmbeddings?: number[][],
+    algorithmIterations?: number
+  ): number[][] | undefined => {
+    const adjustmentData:
+      | SharedTypes.Graph.IClusterMembershipChangeAlgorithm
+      | undefined = this.clusterMembershipChangeAlgorithm(
+      attributeWeightArray,
+      adjustedWeightedEmbeddings,
+      algorithmIterations
+    );
+
+    if (adjustmentData != null) {
+      this.setState({
+        renderCounter: 0,
+        attributeWeightArray: adjustmentData.adjustedAttributeWeightArray,
+        clusterChanged: {
+          nodeId: adjustmentData.newlyAssignedNode.id,
+          newClusterId: adjustmentData.newlyAssignedClusterId,
+        },
+        weightedEmbeddings: adjustmentData.adjustedEmbeddings,
+      });
+    }
+
+    return adjustmentData?.adjustedEmbeddings;
+  };
+
+  private getDistanceMatrix = (
+    adjustedWeightedEmbeddings: number[][]
+  ): number[][] =>
     calculateDistanceMatrix(
-      embeddings,
+      adjustedWeightedEmbeddings,
       euclideanDistance,
       this.state.attributeWeightArray,
       1
     );
 
-  private assignDistanceObjectsForNodes = (
+  private getDistanceObjectsForNodes = (
     nodes: SharedTypes.Graph.INode[],
     distanceMatrix: number[][]
-  ): void => {
+  ): SharedTypes.Graph.INode[] => {
+    let nodesWithNewlyAssignedDistanceObjects: SharedTypes.Graph.INode[] = _.clone(
+      nodes
+    );
     let nodeIds: number[] = [];
-    _.each(nodes, (node) => {
+
+    _.each(nodesWithNewlyAssignedDistanceObjects, (node) => {
       nodeIds.push(node.id);
     });
-
-    _.each(nodes, (node, index) => {
+    _.each(nodesWithNewlyAssignedDistanceObjects, (node, index) => {
       let distanceObj: {
         [nodeId: number]: number;
       } = {};
       _.each(nodeIds, (nodeId, nodeIdIndex) => {
-        if (nodeId !== node.id) {
+        if (
+          nodeId !== node.id &&
+          distanceMatrix[index] != null &&
+          distanceMatrix[index][nodeIdIndex] != null
+        ) {
           distanceObj[nodeId] = distanceMatrix[index][nodeIdIndex];
         }
       });
-      node.distances = distanceObj;
+
+      nodesWithNewlyAssignedDistanceObjects[index].distances = distanceObj;
     });
+
+    return nodesWithNewlyAssignedDistanceObjects;
   };
 
-  // and return node diff
-  private assignClusterObjects = (
+  private getClusterObjectInfo = (
     nodes: SharedTypes.Graph.INode[],
     k: number,
-    distanceMatrix: number[][]
-  ): { [nodeId: number]: SharedTypes.Graph.INode } => {
-    const {
-      nodeMedoidInfoObjects,
-      medoidObject,
-    }: {
-      nodeMedoidInfoObjects: {
-        [nodeId: number]: {
-          medoid: number;
-          distanceFromMedoid: number;
-        };
-      };
-      medoidObject: { [medoid: number]: number };
-    } = kmedoids(distanceMatrix, nodes, k);
+    weightedEmbeddings: number[][],
+    initClusters: number[][],
+    performElbowMethod: boolean,
+    nodeClusterMembershipChangeCounter?: number
+  ): SharedTypes.Graph.IClusterObjectInfo => {
+    const clustersAreAssigned: boolean = !_.isEmpty(this.state.clusters);
     let nodeDiffObject: { [nodeId: number]: SharedTypes.Graph.INode } = {};
-    _.each(nodes, (node) => {
-      const { medoid, distanceFromMedoid } = nodeMedoidInfoObjects[node.id];
-      if (
-        node.clusterId !== medoid &&
-        node.distanceFromClusterMedoid !== distanceFromMedoid &&
-        node.medoidNodeIndex !== medoidObject[node.clusterId]
-      ) {
+    let clusters: number[][] = [];
+
+    let nodeListWithoutClusterNodes: SharedTypes.Graph.INode[] = _.clone(nodes);
+    let weightedEmbeddingsWithoutClusterEmbeddings: number[][] = _.clone(
+      weightedEmbeddings
+    );
+
+    if (
+      nodeClusterMembershipChangeCounter === 0 ||
+      (!performElbowMethod && k !== this.state.clusters.length)
+    ) {
+      nodeListWithoutClusterNodes.splice(
+        nodeListWithoutClusterNodes.length - this.state.clusters.length,
+        this.state.clusters.length
+      );
+      weightedEmbeddingsWithoutClusterEmbeddings.splice(
+        weightedEmbeddingsWithoutClusterEmbeddings.length -
+          this.state.clusters.length,
+        this.state.clusters.length
+      );
+    }
+
+    const kMeansData: SharedTypes.Graph.IKMeansClusteringInfo = kMeans(
+      nodeListWithoutClusterNodes,
+      k,
+      this.state.attributeWeightArray,
+      weightedEmbeddingsWithoutClusterEmbeddings,
+      initClusters,
+      performElbowMethod
+    );
+
+    if (!clustersAreAssigned && performElbowMethod) {
+      this.dispatch(assignK(kMeansData.clusters.length));
+    }
+
+    _.each(nodeListWithoutClusterNodes, (node) => {
+      if (kMeansData.nodeCentroidInfoObjects[node.id] == null) {
+        return;
+      }
+      const { centroid } = kMeansData.nodeCentroidInfoObjects[node.id];
+      if (node.clusterId !== centroid) {
         nodeDiffObject[node.id] = node;
       }
-      node.clusterId = medoid;
-      node.distanceFromClusterMedoid = distanceFromMedoid;
-      node.medoidNodeIndex = medoidObject[node.clusterId];
+      node.clusterId = centroid;
     });
 
-    return nodeDiffObject;
+    clusters = kMeansData.clusters;
+
+    if (
+      !clustersAreAssigned ||
+      (clustersAreAssigned && clusters.length !== this.state.clusters.length) ||
+      nodeClusterMembershipChangeCounter === 0
+    ) {
+      let clusterNodes: SharedTypes.Graph.INode[] = [];
+      _.each(clusters, (cluster, clusterIndex) => {
+        // @ts-ignore
+        const clusterNode: SharedTypes.Graph.INode = {
+          id: _.sum(cluster),
+          isClusterNode: true,
+          index: nodeListWithoutClusterNodes.length + 1 + clusterIndex,
+          nodeLabel: `CLUSTER_CENTROID${clusterIndex}`,
+          color: KELLY_COLOR_PALETTE[clusterIndex],
+          clusterNodeClusterIndex: clusterIndex,
+        };
+        clusterNodes.push(clusterNode);
+        weightedEmbeddingsWithoutClusterEmbeddings.push(cluster);
+      });
+      nodeListWithoutClusterNodes = [
+        ...nodeListWithoutClusterNodes,
+        ...clusterNodes,
+      ];
+    }
+
+    const nodesWithNewlyAssignedClusters: SharedTypes.Graph.INode[] = _.clone(
+      nodeListWithoutClusterNodes
+    );
+    const weightedEmbeddingsIncludingClusterCentroids: number[][] = _.clone(
+      weightedEmbeddingsWithoutClusterEmbeddings
+    );
+
+    this.graphRef?.current?.d3ReheatSimulation();
+
+    return {
+      clusters,
+      nodeDiffObject,
+      nodesWithNewlyAssignedClusters,
+      weightedEmbeddingsIncludingClusterCentroids,
+    };
   };
 
-  private getClusterColorObject = (
+  private getClusterColorObjectInfo = (
     nodes: SharedTypes.Graph.INode[],
     nodeClusters: { [clusterId: number]: number },
     nodeDiffObject: { [nodeId: number]: SharedTypes.Graph.INode }
-  ): { [clusterId: number]: string } => {
+  ): SharedTypes.Graph.IClusterColorObjectInfo => {
+    let nodesWithNewlyAssignedColors: SharedTypes.Graph.INode[] = _.clone(
+      nodes
+    );
     let clusterColorObject: { [clusterId: number]: string } = {};
 
-    _.each(nodes, (node) => {
+    _.each(nodesWithNewlyAssignedColors, (node, index) => {
       const clusterId: number = node.clusterId;
       const clusterIndex: number = Object.values(nodeClusters).indexOf(
         clusterId
       );
       const nodeColor: string = KELLY_COLOR_PALETTE[clusterIndex];
-
-      node.color = nodeColor;
+      nodesWithNewlyAssignedColors[index].color = nodeColor;
 
       if (!(node.clusterId in clusterColorObject)) {
         clusterColorObject[clusterId] = nodeColor;
       }
 
-      if (node.id in nodeDiffObject) {
-        node.color = "pink";
+      if (node.id in nodeDiffObject && !isClusterNode(node)) {
+        nodesWithNewlyAssignedColors[index].color = DEFAULT_COLOR;
       }
     });
 
-    return clusterColorObject;
+    return { clusterColorObject, nodesWithNewlyAssignedColors };
   };
 
   private getNodeClustersStateProperties = (
     nodes: SharedTypes.Graph.INode[]
-  ): {
-    nodeClusters: { [clusterId: number]: number };
-    numberOfNodesInCluster: { [clusterId: number]: number };
-  } => {
+  ): SharedTypes.Graph.INodeClusterStateProperties => {
     let nodeClusters: { [clusterId: number]: number } = {};
     let numberOfNodesInCluster: { [clusterId: number]: number } = {};
 
@@ -424,8 +747,11 @@ class Graph extends React.Component<
 
     let clusterConvexHullCoordinations: SharedTypes.Graph.IClusterConvexHullCoordinations = {};
 
-    _.each(_.keys(clusterNodesCoordinations), (medoid) => {
-      const clusterId: number = parseInt(medoid);
+    _.each(_.keys(clusterNodesCoordinations), (centroid) => {
+      const clusterId: number = parseInt(centroid);
+      if (clusterNodesCoordinations[clusterId] == null) {
+        return;
+      }
       let x: number[] = clusterNodesCoordinations[clusterId].x;
       let y: number[] = clusterNodesCoordinations[clusterId].y;
       const clusterCoordinations: number[][] = x.map((xElem, index) => [
@@ -449,7 +775,7 @@ class Graph extends React.Component<
     });
 
     this.setState({
-      clusterConvexHullCoordinations: clusterConvexHullCoordinations,
+      clusterConvexHullCoordinations,
     });
     return clusterConvexHullCoordinations;
   };
@@ -457,11 +783,13 @@ class Graph extends React.Component<
   private getPairwiseClusterDistance = (): number => {
     let pairwiseClusterDistance: number = FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE;
     if (
-      this.props.pairwiseClusterDistance === PAIRWISE_CLUSTER_DISTANCE.Closer
+      this.props.store.pairwiseClusterDistance ===
+      PAIRWISE_CLUSTER_DISTANCE.Closer
     ) {
       pairwiseClusterDistance = FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE_CLOSER_DISTANCE;
     } else if (
-      this.props.pairwiseClusterDistance === PAIRWISE_CLUSTER_DISTANCE.Farther
+      this.props.store.pairwiseClusterDistance ===
+      PAIRWISE_CLUSTER_DISTANCE.Farther
     ) {
       pairwiseClusterDistance = FORCE_LINK_DIFFERENT_CLUSTER_DISTANCE_FARTHER_DISTANCE;
     }
@@ -470,10 +798,12 @@ class Graph extends React.Component<
 
   private getClusterCompactnessValue = (): number => {
     let clusterCompactnessValue: number = FORCE_LINK_SAME_CLUSTER_DISTANCE;
-    if (this.props.clusterCompactness === CLUSTER_COMPACTNESS.LessCompact) {
+    if (
+      this.props.store.clusterCompactness === CLUSTER_COMPACTNESS.LessCompact
+    ) {
       clusterCompactnessValue = FORCE_LINK_SAME_CLUSTER_DISTANCE_LESS_COMPACT;
     } else if (
-      this.props.clusterCompactness === CLUSTER_COMPACTNESS.MoreCompact
+      this.props.store.clusterCompactness === CLUSTER_COMPACTNESS.MoreCompact
     ) {
       clusterCompactnessValue = FORCE_LINK_SAME_CLUSTER_DISTANCE_MORE_COMPACT;
     }
@@ -536,7 +866,7 @@ class Graph extends React.Component<
     let newConvexHulls: boolean = false;
     // draw the convex hulls when component mounts and upon change in cluster membership
     if (
-      !this.props.dynamicGraph &&
+      !this.props.store.dynamicGraph &&
       _.isEqual(
         _.keys(this.state.clusterConvexHullCoordinations),
         _.keys(this.state.nodeClusters)
@@ -548,7 +878,7 @@ class Graph extends React.Component<
     } else {
       clusterConvexHullCoordinations = this.getClusterConvexHullCoordinations();
       newConvexHulls = true;
-      if (!this.props.dynamicGraph) {
+      if (!this.props.store.dynamicGraph) {
         this.setState({ renderCounter: this.state.renderCounter + 1 });
       }
     }
@@ -591,12 +921,41 @@ class Graph extends React.Component<
       }
 
       // adjust the camera's view in case new convex hulls were created
-      if (newConvexHulls && !this.props.dynamicGraph) {
+      if (newConvexHulls && !this.props.store.dynamicGraph) {
         this.graphRef.current?.zoomToFit(
           ZOOM_TO_FIT_DURATION,
           ZOOM_TO_FIT_PADDING
         );
       }
+    });
+  };
+
+  private getAttributeWeightTable = (sortedTable: boolean): JSX.Element[] => {
+    let tableContent: { [key: number]: number }[] = [];
+    _.each(
+      this.state.attributeWeightArray,
+      (attribute: number, key: number) => {
+        tableContent.push({ [key]: attribute });
+      }
+    );
+
+    if (sortedTable) {
+      tableContent = tableContent.sort((a, b) => {
+        const weightDiff: number = _.values(b)[0] - _.values(a)[0];
+        if (weightDiff === 0) {
+          return parseInt(_.keys(a)[0]) - parseInt(_.keys(b)[0]);
+        }
+        return weightDiff;
+      });
+    }
+
+    return _.map(tableContent, (content: { [key: number]: number }) => {
+      return (
+        <tr key={_.keys(content)[0]}>
+          <td>{_.keys(content)[0]}</td>
+          <td>{_.values(content)[0]}</td>
+        </tr>
+      );
     });
   };
 
@@ -656,19 +1015,49 @@ class Graph extends React.Component<
             graphData={this.state.data}
             linkColor={(link) => {
               const linkObject: SharedTypes.Graph.ILink = link as SharedTypes.Graph.ILink;
+              if (linkObject.color != null) {
+                return linkObject.color;
+              }
+
+              if (isClusterNode(linkObject.source)) {
+                return KELLY_COLOR_PALETTE[
+                  linkObject.source.clusterNodeClusterIndex!
+                ];
+              }
               return getColorAccordingToPairwiseDistance(
                 linkObject.pairwiseDistance
               );
             }}
             onNodeDragEnd={(node) => {
               const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              if (isClusterNode(graphNode)) {
+                return;
+              }
               this.assignNewlyAssignedClusterToNode(graphNode);
             }}
-            linkVisibility={this.props.showEdges}
+            nodeVisibility={(node) => {
+              const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
+              if (isClusterNode(graphNode)) {
+                return this.props.store.showClusterCentroids;
+              }
+              return true;
+            }}
+            linkVisibility={(link) => {
+              const linkObject: SharedTypes.Graph.ILink = link as SharedTypes.Graph.ILink;
+              if (isClusterNode(linkObject.source)) {
+                return (
+                  this.props.store.showClusterCentroids &&
+                  this.props.store.showEdges
+                );
+              }
+              return this.props.store.showEdges;
+            }}
             warmupTicks={
-              this.props.dynamicGraph ? undefined : FORCE_GRAPH_WARM_UP_TICKS
+              this.props.store.dynamicGraph
+                ? undefined
+                : FORCE_GRAPH_WARM_UP_TICKS
             }
-            cooldownTicks={this.props.dynamicGraph ? Infinity : 0}
+            cooldownTicks={this.props.store.dynamicGraph ? Infinity : 0}
             onRenderFramePre={(ctx) => {
               if (this.graphRef.current != null) {
                 this.assignPairwiseDistances(this.graphRef.current);
@@ -696,14 +1085,24 @@ class Graph extends React.Component<
               );
               ctx.textAlign = "center";
               ctx.textBaseline = "middle";
-              ctx.fillStyle = graphNode.color;
+              if (isClusterNode(graphNode)) {
+                ctx.fillStyle =
+                  KELLY_COLOR_PALETTE[graphNode.clusterNodeClusterIndex!];
+              } else {
+                ctx.fillStyle = graphNode.color;
+              }
               ctx.fillText(label, graphNode.x, graphNode.y + 10);
 
               graphNode.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
             }}
             nodePointerAreaPaint={(node, color, ctx) => {
               const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
-              ctx.fillStyle = color;
+              if (isClusterNode(graphNode)) {
+                ctx.fillStyle =
+                  KELLY_COLOR_PALETTE[graphNode.clusterNodeClusterIndex!];
+              } else {
+                ctx.fillStyle = color;
+              }
               const bckgDimensions: number[] = graphNode.__bckgDimensions;
               bckgDimensions &&
                 ctx.fillRect(
@@ -713,22 +1112,63 @@ class Graph extends React.Component<
                   bckgDimensions[1] + 10
                 );
             }}
-            onNodeClick={(node: NodeObject) => {
+            onNodeClick={async (node: NodeObject) => {
               const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
-              if (!this.props.isNodeDrawerOpen) {
-                this.props.toggleNodeDrawer();
-                this.props.assignNodeDrawerContent(graphNode);
+              if (isClusterNode(graphNode)) {
+                return;
+              }
+              if (!this.props.store.nodeDrawerOpen) {
+                await this.dispatch(toggleNodeDrawer());
+                await this.dispatch(assignNodeDrawerContent(graphNode));
               } else {
-                this.props.assignNodeDrawerContent(graphNode);
+                this.dispatch(assignNodeDrawerContent(graphNode));
               }
             }}
             onBackgroundClick={() => {
-              if (this.props.isNodeDrawerOpen) {
-                this.props.toggleNodeDrawer();
+              if (this.props.store.nodeDrawerOpen) {
+                this.dispatch(toggleNodeDrawer());
               }
             }}
           />
         )}
+
+        <Dialog
+          isOpen={this.props.store.attributeWeightDialogOpen}
+          title={"Attribute Weight"}
+          onClose={() => this.dispatch(toggleAttributeWeightDialog())}
+        >
+          <div
+            style={{
+              margin: "5px 0",
+              maxHeight: 400,
+              overflowY: "scroll",
+              display: "flex",
+              justifySelf: "center",
+            }}
+          >
+            <table
+              className="bp3-html-table bp3-html-table-condensed bp3-html-table-bordered"
+              style={{ width: "-webkit-fill-available" }}
+            >
+              <thead>
+                <tr>
+                  <th>{"Key"}</th>
+                  <th
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      this.setState({ sortedTable: !this.state.sortedTable })
+                    }
+                  >
+                    {"Weight"}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {this.getAttributeWeightTable(this.state.sortedTable)}
+              </tbody>
+            </table>
+          </div>
+        </Dialog>
       </>
     );
   }

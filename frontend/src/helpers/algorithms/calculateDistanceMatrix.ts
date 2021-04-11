@@ -42,25 +42,17 @@ export function calculateDistanceMatrix(
 export function euclideanDistance(
   p: number[],
   q: number[],
-  Wa: number[],
-  We: number
+  Wa: number[]
 ): number {
   let distance: number = 0;
   for (let i = 0; i < p.length; i++) {
-    distance += Wa[i] * We * Math.pow(p[i] - q[i], 2);
+    distance += Wa[i] * Math.pow(p[i] - q[i], 2);
   }
 
   return Math.sqrt(distance);
 }
 
-export function manhattanDistance(
-  pointA: { x: number; y: number },
-  pointB: { x: number; y: number }
-): number {
-  return Math.abs(pointA.x - pointB.x) + Math.abs(pointA.y - pointB.y);
-}
-
-export function mDistance(p: number, q: number): number {
+export function manhattanDistance(p: number, q: number): number {
   return Math.abs(p - q);
 }
 

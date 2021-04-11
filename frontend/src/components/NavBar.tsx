@@ -16,8 +16,20 @@ import {
   CLUSTER_COMPACTNESS,
   PAIRWISE_CLUSTER_DISTANCE,
 } from "../helpers/constants";
+import {
+  assignClusterCompactness,
+  assignK,
+  assignPairwiseClusterDistance,
+  toggleAttributeWeightDialog,
+  toggleDynamicGraph,
+  toggleShowClusterCentroids,
+  toggleShowEdges,
+} from "../actions/actions";
 
-class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
+class NavBar extends React.PureComponent<SharedTypes.NavBar.INavBarProps> {
+  private dispatch = async (action: SharedTypes.App.IAction): Promise<void> =>
+    await this.props.reducer(this.props.store, action);
+
   render() {
     return (
       <Navbar className={"gt-iml-navbar"}>
@@ -28,15 +40,22 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
         <Switch
           className={"gt-iml-navbar-switch"}
           label={"Dynamic Graph"}
-          checked={this.props.dynamicGraph}
-          onChange={this.props.toggleDynamicGraph}
+          checked={this.props.store.dynamicGraph}
+          onChange={() => this.dispatch(toggleDynamicGraph())}
         />
 
         <Switch
           className={"gt-iml-navbar-switch"}
           label={"Show Edges"}
-          checked={this.props.showEdges}
-          onChange={this.props.toggleShowEdges}
+          checked={this.props.store.showEdges}
+          onChange={() => this.dispatch(toggleShowEdges())}
+        />
+
+        <Switch
+          className={"gt-iml-navbar-switch"}
+          label={"Show Cluster Centroids"}
+          checked={this.props.store.showClusterCentroids}
+          onChange={() => this.dispatch(toggleShowClusterCentroids())}
         />
 
         <HTMLSelect
@@ -44,8 +63,8 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
           title={CLUSTER_COMPACTNESS.ClusterCompactness}
           defaultValue={CLUSTER_COMPACTNESS.ClusterCompactness}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-            this.props.assignClusterCompactness(
-              e.target.value as CLUSTER_COMPACTNESS
+            this.dispatch(
+              assignClusterCompactness(e.target.value as CLUSTER_COMPACTNESS)
             )
           }
           minimal
@@ -60,8 +79,10 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
           title={PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance}
           defaultValue={PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-            this.props.assignPairwiseClusterDistance(
-              e.target.value as PAIRWISE_CLUSTER_DISTANCE
+            this.dispatch(
+              assignPairwiseClusterDistance(
+                e.target.value as PAIRWISE_CLUSTER_DISTANCE
+              )
             )
           }
           minimal
@@ -76,18 +97,26 @@ class NavBar extends React.Component<SharedTypes.NavBar.INavBarProps> {
             min={2}
             max={15}
             clampValueOnBlur
-            defaultValue={this.props.k}
+            defaultValue={this.props.store.k}
             onValueChange={(valueAsNumber: number) => {
               if (!(valueAsNumber <= 16 && valueAsNumber >= 2)) {
                 return;
               }
-              this.props.assignK(valueAsNumber);
+              this.dispatch(assignK(valueAsNumber));
             }}
-            value={this.props.k}
+            value={this.props.store.k}
             style={{ width: 35, marginLeft: 30 }}
           />
           <span style={{ marginLeft: 10 }}>{"k [2, 15]"}</span>
         </>
+
+        <Button
+          className={"gt-iml-navbar-button"}
+          minimal
+          onClick={() => this.dispatch(toggleAttributeWeightDialog())}
+        >
+          {"Attribute Weight"}
+        </Button>
 
         <div className={"gt-iml-navbar-source-code"}>
           <Button

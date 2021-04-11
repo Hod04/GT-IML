@@ -11,41 +11,109 @@ export namespace SharedTypes {
       nodeDrawerContent: NodeDrawer.INodeDrawerContent;
       dynamicGraph: boolean;
       showEdges: boolean;
+      showClusterCentroids: boolean;
       nodes: Graph.INode[];
+      clusterNodes: Graph.INode[];
       clusterCompactness: CLUSTER_COMPACTNESS;
       pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
       k: number;
+      attributeWeightDialogOpen: boolean;
+    }
+
+    export type IAction =
+      | IAssignNodesAction
+      | IAssignClusterNodesAction
+      | IAssignKAction
+      | IAssignNodeDrawerContentAction
+      | IAssignClusterCompactnessAction
+      | IAssignPairwiseClusterDistanceAction
+      | IToggleNodeDrawerAction
+      | IToggleShowEdgesAction
+      | IToggleShowClusterCentroidsAction
+      | IToggleAttributeWeightDialogAction
+      | IToggleDynamicGraphAction;
+
+    export interface IAssignNodesAction {
+      type: number;
+      payload: Graph.INode[];
+    }
+
+    export interface IAssignClusterNodesAction {
+      type: number;
+      payload: Graph.INode[];
+    }
+
+    export interface IAssignKAction {
+      type: number;
+      payload: number;
+    }
+
+    export interface IAssignNodeDrawerContentAction {
+      type: number;
+      payload: Graph.INode;
+    }
+
+    export interface IAssignClusterCompactnessAction {
+      type: number;
+      payload: CLUSTER_COMPACTNESS;
+    }
+
+    export interface IAssignPairwiseClusterDistanceAction {
+      type: number;
+      payload: PAIRWISE_CLUSTER_DISTANCE;
+    }
+
+    export interface IToggleNodeDrawerAction {
+      type: number;
+      payload: null;
+    }
+
+    export interface IToggleShowEdgesAction {
+      type: number;
+      payload: null;
+    }
+
+    export interface IToggleShowClusterCentroidsAction {
+      type: number;
+      payload: null;
+    }
+
+    export interface IToggleAttributeWeightDialogAction {
+      type: number;
+      payload: null;
+    }
+
+    export interface IToggleDynamicGraphAction {
+      type: number;
+      payload: null;
     }
   }
 
   export namespace Graph {
     export interface IGraphProps {
-      assignNodes: (nodes: INode[]) => void;
-      toggleNodeDrawer: () => void;
-      isNodeDrawerOpen: boolean;
-      assignNodeDrawerContent: (node: INode) => void;
-      dynamicGraph: boolean;
-      showEdges: boolean;
-      clusterCompactness: CLUSTER_COMPACTNESS;
-      pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
-      k: number;
+      store: App.IAppState;
+      reducer: (state: App.IAppState, action: App.IAction) => void;
     }
 
     export interface IGraphState {
       data: IData;
       attributeWeightArray: number[];
+      weightedEmbeddings: number[][];
 
+      clusters: number[][];
       nodeClusters: { [clusterId: number]: number };
       numberOfNodesInCluster: { [clusterId: number]: number };
       clusterConvexHullCoordinations: IClusterConvexHullCoordinations;
       clusterColorObject: { [clusterId: number]: string };
 
       nodeWithNewlyAssignedCluster?: { node: INode; newClusterId: number };
+      clusterChanged?: { nodeId: number; newClusterId: number };
 
       distanceRange: { min: number; max: number };
       distanceMatrix: number[][];
 
       renderCounter: number;
+      sortedTable: boolean;
     }
 
     export interface IData {
@@ -56,14 +124,15 @@ export namespace SharedTypes {
     export interface INode {
       id: number;
       distances: { [nodeId: number]: number };
-      distanceFromClusterMedoid: number;
-      medoidNodeIndex: number;
+      centroidNodeIndex: number;
       nodeLabel: string;
       text: string;
       clusterId: number;
       author: string;
       publishedAt: string;
       color: string;
+      clusterNodeClusterIndex?: number;
+      isClusterNode?: boolean;
       index: number;
       fx: number;
       fy: number;
@@ -76,6 +145,7 @@ export namespace SharedTypes {
       source: INode;
       target: INode;
       pairwiseDistance: number;
+      color?: string;
     }
 
     export interface IClusterConvexHullCoordinations {
@@ -96,18 +166,46 @@ export namespace SharedTypes {
       (alpha: number): void;
       initialize?: (nodes: NodeObject[]) => void;
     }
+
+    export interface IClusterObjectInfo {
+      clusters: number[][];
+      nodeDiffObject: { [nodeId: number]: INode };
+      nodesWithNewlyAssignedClusters: INode[];
+      weightedEmbeddingsIncludingClusterCentroids: number[][];
+    }
+
+    export interface INodeClusterStateProperties {
+      nodeClusters: { [clusterId: number]: number };
+      numberOfNodesInCluster: { [clusterId: number]: number };
+    }
+
+    export interface IClusterColorObjectInfo {
+      clusterColorObject: { [clusterId: number]: string };
+      nodesWithNewlyAssignedColors: INode[];
+    }
+
+    export interface IClusterMembershipChangeAlgorithm {
+      newlyAssignedNode: Graph.INode;
+      newlyAssignedClusterId: number;
+      adjustedAttributeWeightArray: number[];
+      adjustedEmbeddings: number[][];
+    }
+
+    export interface IKMeansClusteringInfo {
+      nodeCentroidInfoObjects: {
+        [nodeId: number]: {
+          centroid: number;
+        };
+      };
+      clusters: number[][];
+    }
   }
 
   export namespace NodeDrawer {
     export interface INodeDrawerProps {
-      isOpen: boolean;
-      toggleNodeDrawer: () => void;
-      content: INodeDrawerContent;
+      store: App.IAppState;
+      reducer: (state: App.IAppState, action: App.IAction) => void;
       nodes: Graph.INode[];
-    }
-
-    export interface INodeDrawerState {
-      nodeInfo: INodeInfo;
     }
 
     export interface INodeInfo {
@@ -125,18 +223,8 @@ export namespace SharedTypes {
 
   export namespace NavBar {
     export interface INavBarProps {
-      dynamicGraph: boolean;
-      showEdges: boolean;
-      k: number;
-      toggleDynamicGraph: () => void;
-      toggleShowEdges: () => void;
-      assignClusterCompactness: (
-        clusterCompactness: CLUSTER_COMPACTNESS
-      ) => void;
-      assignPairwiseClusterDistance: (
-        pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE
-      ) => void;
-      assignK: (k: number) => void;
+      store: App.IAppState;
+      reducer: (state: App.IAppState, action: App.IAction) => void;
     }
   }
 }

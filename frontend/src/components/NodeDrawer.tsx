@@ -4,50 +4,23 @@ import { SharedTypes } from "../shared/sharedTypes";
 import "../styles/NodeDrawer.css";
 import _ from "lodash";
 import { getColorAccordingToPairwiseDistance } from "../helpers/nodeDrawerHelpers/nodeDrawersHelpers";
+import {
+  isClusterNode,
+  isClusterNodeById,
+} from "../helpers/graphHelpers/graphHelpers";
+import { DEFAULT_COLOR } from "../helpers/constants";
+import { toggleNodeDrawer } from "../actions/actions";
 
-export default class NodeDrawer extends React.Component<
-  SharedTypes.NodeDrawer.INodeDrawerProps,
-  SharedTypes.NodeDrawer.INodeDrawerState
-> {
-  constructor(props: SharedTypes.NodeDrawer.INodeDrawerProps) {
-    super(props);
-    this.state = {
-      nodeInfo: {},
-    };
-  }
-
-  public componentDidUpdate(
-    prevProps: SharedTypes.NodeDrawer.INodeDrawerProps,
-    prevState: SharedTypes.NodeDrawer.INodeDrawerState
-  ): void {
-    if (
-      _.isEmpty(prevState.nodeInfo) ||
-      !_.isEqual(prevProps.nodes, this.props.nodes)
-    ) {
-      this.assignNodeInfo();
-    }
-  }
-
-  private assignNodeInfo = (): void => {
-    let nodeInfo: SharedTypes.NodeDrawer.INodeInfo = {} as SharedTypes.NodeDrawer.INodeInfo;
-    _.each(
-      this.props.nodes,
-      (node) =>
-        (nodeInfo[node.id] = {
-          text: node.text,
-          author: node.author,
-          color: node.color,
-        })
-    );
-    this.setState({ nodeInfo });
-  };
+export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDrawer.INodeDrawerProps> {
+  private dispatch = async (action: SharedTypes.App.IAction): Promise<void> =>
+    await this.props.reducer(this.props.store, action);
 
   private getPublishedAtSection = (): JSX.Element => (
     <>
       <p>
         <strong>{"Published At"}</strong>
       </p>
-      <p>{this.props.content.publishedAt}</p>
+      <p>{this.props.store.nodeDrawerContent.publishedAt}</p>
     </>
   );
 
@@ -56,7 +29,7 @@ export default class NodeDrawer extends React.Component<
       <p>
         <strong>{"Author Name"}</strong>
       </p>
-      <p>{this.props.content.author}</p>
+      <p>{this.props.store.nodeDrawerContent.author}</p>
     </>
   );
 
@@ -65,7 +38,7 @@ export default class NodeDrawer extends React.Component<
       <p>
         <strong>{"Text"}</strong>
       </p>
-      <p>{this.props.content.text}</p>
+      <p>{this.props.store.nodeDrawerContent.text}</p>
     </>
   );
 
@@ -98,7 +71,7 @@ export default class NodeDrawer extends React.Component<
           <div
             style={{
               backgroundColor: getColorAccordingToPairwiseDistance(0.6),
-              color: "black",
+              color: DEFAULT_COLOR,
             }}
           >
             {"0.5 <= Distance < 0.75"}
@@ -106,7 +79,7 @@ export default class NodeDrawer extends React.Component<
           <div
             style={{
               backgroundColor: getColorAccordingToPairwiseDistance(0.8),
-              color: "black",
+              color: DEFAULT_COLOR,
             }}
           >
             {"Distance >= 0.75"}
@@ -120,42 +93,59 @@ export default class NodeDrawer extends React.Component<
 
   private getDistancesTableBody = (): JSX.Element[] =>
     _.map(
-      this.props.content.distances,
-      (distanceValue: number, nodeId: string) => (
-        <tr
-          key={`${this.props.content.publishedAt}-${nodeId}`}
-          style={{
-            backgroundColor: getColorAccordingToPairwiseDistance(distanceValue),
-          }}
-        >
-          <td>
-            <div style={{ display: "flex", height: "-webkit-fill-available" }}>
+      this.props.store.nodeDrawerContent.distances,
+      (distanceValue: number, nodeId: string) => {
+        const node: SharedTypes.Graph.INode | undefined = _.find(
+          this.props.nodes,
+          (node) => node.id === parseInt(nodeId)
+        );
+
+        if (
+          (node != null && isClusterNode(node)) ||
+          isClusterNodeById(parseFloat(nodeId))
+        ) {
+          return null!;
+        }
+
+        const nodeIndex: number = _.indexOf(this.props.nodes, node);
+        return (
+          <tr
+            key={`${this.props.store.nodeDrawerContent.publishedAt}-${nodeId}`}
+            style={{
+              backgroundColor: getColorAccordingToPairwiseDistance(
+                distanceValue
+              ),
+            }}
+          >
+            <td>
               <div
-                style={{
-                  backgroundColor: `${
-                    this.state.nodeInfo[parseInt(nodeId)].color
-                  }`,
-                  width: 5,
-                  marginRight: 5,
-                  height: 20,
-                }}
-              />
-              {distanceValue}
-            </div>
-          </td>
-          <td>{this.state.nodeInfo[parseInt(nodeId)].author}</td>
-          <td>{this.state.nodeInfo[parseInt(nodeId)].text}</td>
-        </tr>
-      )
+                style={{ display: "flex", height: "-webkit-fill-available" }}
+              >
+                <div
+                  style={{
+                    backgroundColor: `${this.props.nodes[nodeIndex]?.color}`,
+                    width: 5,
+                    marginRight: 5,
+                    height: 20,
+                  }}
+                />
+                {distanceValue}
+              </div>
+            </td>
+            <td>{this.props.nodes[nodeIndex]?.author}</td>
+            <td>{this.props.nodes[nodeIndex]?.text}</td>
+          </tr>
+        );
+      }
     );
 
   render() {
     return (
       <>
-        {!_.isEmpty(this.state.nodeInfo) && (
+        {!_.isEmpty(this.props.nodes) && (
           <Drawer
-            isOpen={this.props.isOpen}
-            onClose={this.props.toggleNodeDrawer}
+            isOpen={this.props.store.nodeDrawerOpen}
+            onClose={() => this.dispatch(toggleNodeDrawer())}
             canOutsideClickClose={true}
             hasBackdrop={false}
             size={"33%"}
@@ -163,7 +153,7 @@ export default class NodeDrawer extends React.Component<
               <div style={{ display: "flex" }}>
                 <div
                   style={{
-                    backgroundColor: `${this.props.content.color}`,
+                    backgroundColor: `${this.props.store.nodeDrawerContent.color}`,
                     width: 5,
                     marginRight: 5,
                   }}

@@ -30,14 +30,28 @@ export enum PAIRWISE_CLUSTER_DISTANCE {
   Closer = "Closer",
 }
 
+export enum IActionType {
+  ASSIGN_NODES,
+  ASSIGN_CLUSTER_NODES,
+  ASSIGN_K,
+  ASSIGN_NODE_DRAWER_CONTENT,
+  ASSIGN_CLUSTER_COMPACTNESS,
+  ASSIGN_PAIRWISE_CLUSTER_DISTANCE,
+  TOGGLE_NODE_DRAWER,
+  TOGGLE_SHOW_EDGES,
+  TOGGLE_SHOW_CLUSTER_CENTROIDS,
+  TOGGLE_ATTRIBUTE_WEIGHT_DIALOG,
+  TOGGLE_DYNAMIC_GRAPH,
+}
+
+export const DEFAULT_COLOR: string = "#222222";
+
 //  theory - https://eleanormaclure.files.wordpress.com/2011/03/colour-coding.pdf (page 5)
 //  kelly's colors - https://i.kinja-img.com/gawker-media/image/upload/1015680494325093012.JPG
 export const KELLY_COLOR_PALETTE: string[] = [
-  "#222222",
   "#F3C300",
   "#875692",
   "#F38400",
-  "#A1CAF1",
   "#BE0032",
   "#C2B280",
   "#008856",
