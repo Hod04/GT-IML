@@ -1098,7 +1098,7 @@ class Graph extends React.Component<
               } else {
                 ctx.fillStyle = graphNode.color;
               }
-              ctx.fillText(label, graphNode.x, graphNode.y + 10);
+              ctx.fillText(label, graphNode.x, graphNode.y + 15);
 
               graphNode.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
             }}
@@ -1116,7 +1116,7 @@ class Graph extends React.Component<
                   graphNode.x - bckgDimensions[0] / 2,
                   graphNode.y - bckgDimensions[1] / 2,
                   bckgDimensions[0],
-                  bckgDimensions[1] + 10
+                  bckgDimensions[1] + 15
                 );
             }}
             nodeRelSize={7}
