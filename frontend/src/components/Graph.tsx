@@ -45,12 +45,12 @@ import { embeddings } from "../helpers/embeddings";
 import { kMeans } from "../helpers/graphHelpers/kmeans";
 import { Dialog } from "@blueprintjs/core";
 import {
-  assignClusterNodes,
-  assignK,
-  assignNodeDrawerContent,
-  assignNodes,
-  toggleAttributeWeightDialog,
-  toggleNodeDrawer,
+  assignClusterNodesActionCreator,
+  assignKActionCreator,
+  assignNodeDrawerContentActionCreator,
+  assignNodesActionCreator,
+  toggleAttributeWeightDialogActionCreator,
+  toggleNodeDrawerActionCreator,
 } from "../actions/actions";
 
 class Graph extends React.Component<
@@ -163,7 +163,10 @@ class Graph extends React.Component<
           componentMounted,
           nodeClusterMembershipChangeCounter
         );
-        nodeDiffObject = clusterObjectsInfo.nodeDiffObject;
+        nodeDiffObject = {
+          ...nodeDiffObject,
+          ...clusterObjectsInfo.nodeDiffObject,
+        };
         clusters = clusterObjectsInfo.clusters;
         newlyConstructedNodes =
           clusterObjectsInfo.nodesWithNewlyAssignedClusters;
@@ -241,9 +244,9 @@ class Graph extends React.Component<
         nodeWithNewlyAssignedCluster: undefined,
       },
       async () => {
-        await this.dispatch(assignNodes(this.state.data.nodes));
+        await this.dispatch(assignNodesActionCreator(this.state.data.nodes));
         await this.dispatch(
-          assignClusterNodes(
+          assignClusterNodesActionCreator(
             this.state.data.nodes.slice(
               this.state.data.nodes.length - this.state.clusters.length
             )
@@ -364,13 +367,14 @@ class Graph extends React.Component<
               sourceClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
                 adjustedEmbeddings[node.index],
                 destinationClusterEmbeddingsEntry,
-                100
+                50
               );
+              adjustedNodeEntries[node.index] = sourceClusterNodeEmbeddingEntry;
             } else if (node.distances[newlyAssignedNode.id] > 0.75) {
               sourceClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
                 adjustedEmbeddings[node.index],
                 destinationClusterEmbeddingsEntry,
-                -100
+                -50
               );
               adjustedNodeEntries[node.index] = sourceClusterNodeEmbeddingEntry;
             }
@@ -379,13 +383,16 @@ class Graph extends React.Component<
               differentClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
                 adjustedEmbeddings[node.index],
                 destinationClusterEmbeddingsEntry,
-                100
+                50
               );
+              adjustedNodeEntries[
+                node.index
+              ] = differentClusterNodeEmbeddingEntry;
             } else if (node.distances[newlyAssignedNode.id] > 0.75) {
               differentClusterNodeEmbeddingEntry = weightEmbeddingsEntry(
                 adjustedEmbeddings[node.index],
                 destinationClusterEmbeddingsEntry,
-                -100
+                -50
               );
               adjustedNodeEntries[
                 node.index
@@ -631,7 +638,7 @@ class Graph extends React.Component<
     );
 
     if (!clustersAreAssigned && performElbowMethod) {
-      this.dispatch(assignK(kMeansData.clusters.length));
+      this.dispatch(assignKActionCreator(kMeansData.clusters.length));
     }
 
     _.each(nodeListWithoutClusterNodes, (node) => {
@@ -644,7 +651,7 @@ class Graph extends React.Component<
       }
       node.clusterId = centroid;
     });
-
+    console.log(nodeDiffObject);
     clusters = kMeansData.clusters;
 
     if (
@@ -1112,21 +1119,24 @@ class Graph extends React.Component<
                   bckgDimensions[1] + 10
                 );
             }}
+            nodeRelSize={7}
             onNodeClick={async (node: NodeObject) => {
               const graphNode: SharedTypes.Graph.INode = node as SharedTypes.Graph.INode;
               if (isClusterNode(graphNode)) {
                 return;
               }
               if (!this.props.store.nodeDrawerOpen) {
-                await this.dispatch(toggleNodeDrawer());
-                await this.dispatch(assignNodeDrawerContent(graphNode));
+                await this.dispatch(toggleNodeDrawerActionCreator());
+                await this.dispatch(
+                  assignNodeDrawerContentActionCreator(graphNode)
+                );
               } else {
-                this.dispatch(assignNodeDrawerContent(graphNode));
+                this.dispatch(assignNodeDrawerContentActionCreator(graphNode));
               }
             }}
             onBackgroundClick={() => {
               if (this.props.store.nodeDrawerOpen) {
-                this.dispatch(toggleNodeDrawer());
+                this.dispatch(toggleNodeDrawerActionCreator());
               }
             }}
           />
@@ -1135,7 +1145,9 @@ class Graph extends React.Component<
         <Dialog
           isOpen={this.props.store.attributeWeightDialogOpen}
           title={"Attribute Weight"}
-          onClose={() => this.dispatch(toggleAttributeWeightDialog())}
+          onClose={() =>
+            this.dispatch(toggleAttributeWeightDialogActionCreator())
+          }
         >
           <div
             style={{

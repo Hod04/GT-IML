@@ -9,7 +9,7 @@ import {
   isClusterNodeById,
 } from "../helpers/graphHelpers/graphHelpers";
 import { DEFAULT_COLOR } from "../helpers/constants";
-import { toggleNodeDrawer } from "../actions/actions";
+import { toggleNodeDrawerActionCreator } from "../actions/actions";
 
 export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDrawer.INodeDrawerProps> {
   private dispatch = async (action: SharedTypes.App.IAction): Promise<void> =>
@@ -145,7 +145,7 @@ export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDraw
         {!_.isEmpty(this.props.nodes) && (
           <Drawer
             isOpen={this.props.store.nodeDrawerOpen}
-            onClose={() => this.dispatch(toggleNodeDrawer())}
+            onClose={() => this.dispatch(toggleNodeDrawerActionCreator())}
             canOutsideClickClose={true}
             hasBackdrop={false}
             size={"33%"}

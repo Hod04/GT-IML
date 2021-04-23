@@ -5,7 +5,7 @@ import {
 } from "../helpers/constants";
 import { SharedTypes } from "../shared/sharedTypes";
 
-export const assignNodes = (
+export const assignNodesActionCreator = (
   nodes: SharedTypes.Graph.INode[]
 ): SharedTypes.App.IAssignNodesAction => {
   return {
@@ -14,7 +14,7 @@ export const assignNodes = (
   };
 };
 
-export const assignClusterNodes = (
+export const assignClusterNodesActionCreator = (
   nodes: SharedTypes.Graph.INode[]
 ): SharedTypes.App.IAssignClusterNodesAction => {
   return {
@@ -23,14 +23,16 @@ export const assignClusterNodes = (
   };
 };
 
-export const assignK = (k: number): SharedTypes.App.IAssignKAction => {
+export const assignKActionCreator = (
+  k: number
+): SharedTypes.App.IAssignKAction => {
   return {
     type: IActionType.ASSIGN_K,
     payload: k,
   };
 };
 
-export const assignNodeDrawerContent = (
+export const assignNodeDrawerContentActionCreator = (
   node: SharedTypes.Graph.INode
 ): SharedTypes.App.IAssignNodeDrawerContentAction => {
   return {
@@ -39,7 +41,7 @@ export const assignNodeDrawerContent = (
   };
 };
 
-export const assignClusterCompactness = (
+export const assignClusterCompactnessActionCreator = (
   compactness: CLUSTER_COMPACTNESS
 ): SharedTypes.App.IAssignClusterCompactnessAction => {
   return {
@@ -48,7 +50,7 @@ export const assignClusterCompactness = (
   };
 };
 
-export const assignPairwiseClusterDistance = (
+export const assignPairwiseClusterDistanceActionCreator = (
   pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE
 ): SharedTypes.App.IAssignPairwiseClusterDistanceAction => {
   return {
@@ -57,35 +59,35 @@ export const assignPairwiseClusterDistance = (
   };
 };
 
-export const toggleNodeDrawer = (): SharedTypes.App.IToggleNodeDrawerAction => {
+export const toggleNodeDrawerActionCreator = (): SharedTypes.App.IToggleNodeDrawerAction => {
   return {
     type: IActionType.TOGGLE_NODE_DRAWER,
     payload: null,
   };
 };
 
-export const toggleShowEdges = (): SharedTypes.App.IToggleShowEdgesAction => {
+export const toggleShowEdgesActionCreator = (): SharedTypes.App.IToggleShowEdgesAction => {
   return {
     type: IActionType.TOGGLE_SHOW_EDGES,
     payload: null,
   };
 };
 
-export const toggleShowClusterCentroids = (): SharedTypes.App.IToggleShowClusterCentroidsAction => {
+export const toggleShowClusterCentroidsActionCreator = (): SharedTypes.App.IToggleShowClusterCentroidsAction => {
   return {
     type: IActionType.TOGGLE_SHOW_CLUSTER_CENTROIDS,
     payload: null,
   };
 };
 
-export const toggleAttributeWeightDialog = (): SharedTypes.App.IToggleAttributeWeightDialogAction => {
+export const toggleAttributeWeightDialogActionCreator = (): SharedTypes.App.IToggleAttributeWeightDialogAction => {
   return {
     type: IActionType.TOGGLE_ATTRIBUTE_WEIGHT_DIALOG,
     payload: null,
   };
 };
 
-export const toggleDynamicGraph = (): SharedTypes.App.IToggleDynamicGraphAction => {
+export const toggleDynamicGraphActionCreator = (): SharedTypes.App.IToggleDynamicGraphAction => {
   return {
     type: IActionType.TOGGLE_DYNAMIC_GRAPH,
     payload: null,
