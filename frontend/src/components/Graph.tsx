@@ -45,6 +45,7 @@ import { embeddings } from "../helpers/embeddings";
 import { kMeans } from "../helpers/graphHelpers/kmeans";
 import { Dialog } from "@blueprintjs/core";
 import {
+  assignClusterLabelActionCreator,
   assignClusterNodesActionCreator,
   assignKActionCreator,
   assignNodeDrawerContentActionCreator,
@@ -651,7 +652,6 @@ class Graph extends React.Component<
       }
       node.clusterId = centroid;
     });
-    console.log(nodeDiffObject);
     clusters = kMeansData.clusters;
 
     if (
@@ -733,14 +733,17 @@ class Graph extends React.Component<
     let numberOfNodesInCluster: { [clusterId: number]: number } = {};
 
     _.each(nodes, (node: SharedTypes.Graph.INode) => {
-      const nodeCluster: number = node.clusterId;
-      if (!(node.clusterId in nodeClusters)) {
-        nodeClusters[node.clusterId] = nodeCluster;
+      if (isClusterNode(node)) {
+        return;
       }
-      if (!(nodeCluster in numberOfNodesInCluster)) {
-        numberOfNodesInCluster[nodeCluster] = 1;
+      const clusterId: number = node.clusterId;
+      if (!(node.clusterId in nodeClusters)) {
+        nodeClusters[node.clusterId] = clusterId;
+      }
+      if (!(clusterId in numberOfNodesInCluster)) {
+        numberOfNodesInCluster[clusterId] = 1;
       } else {
-        numberOfNodesInCluster[nodeCluster] += 1;
+        numberOfNodesInCluster[clusterId] += 1;
       }
     });
     return { nodeClusters, numberOfNodesInCluster };
@@ -1141,7 +1144,41 @@ class Graph extends React.Component<
             }}
           />
         )}
-
+        {!_.isEmpty(this.state.nodeClusters) && (
+          <div
+            style={{
+              display: "flex",
+              position: "absolute",
+              left: 20,
+              top: 100,
+              flexDirection: "column",
+              width: 200,
+            }}
+          >
+            {_.map(this.state.nodeClusters, (nodeCluster) => (
+              <input
+                style={{
+                  color: KELLY_COLOR_PALETTE[nodeCluster],
+                  boxShadow: "none",
+                  background: "transparent",
+                }}
+                key={nodeCluster}
+                className="bp3-input bp3-minimal"
+                type={"text"}
+                placeholder={`Cluster ${nodeCluster}`}
+                dir={"auto"}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  this.dispatch(
+                    assignClusterLabelActionCreator(
+                      nodeCluster,
+                      event.target.value
+                    )
+                  )
+                }
+              />
+            ))}
+          </div>
+        )}
         <Dialog
           isOpen={this.props.store.attributeWeightDialogOpen}
           title={"Attribute Weight"}

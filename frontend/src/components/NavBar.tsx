@@ -37,12 +37,12 @@ class NavBar extends React.PureComponent<SharedTypes.NavBar.INavBarProps> {
 
         <NavbarDivider />
 
-        <Switch
+        {/* <Switch
           className={"gt-iml-navbar-switch"}
           label={"Dynamic Graph"}
           checked={this.props.store.dynamicGraph}
           onChange={() => this.dispatch(toggleDynamicGraphActionCreator())}
-        />
+        /> */}
 
         <Switch
           className={"gt-iml-navbar-switch"}
@@ -114,7 +114,7 @@ class NavBar extends React.PureComponent<SharedTypes.NavBar.INavBarProps> {
           <span style={{ marginLeft: 10 }}>{"k [2, 15]"}</span>
         </>
 
-        <Button
+        {/* <Button
           className={"gt-iml-navbar-button"}
           minimal
           onClick={() =>
@@ -122,7 +122,7 @@ class NavBar extends React.PureComponent<SharedTypes.NavBar.INavBarProps> {
           }
         >
           {"Attribute Weight"}
-        </Button>
+        </Button> */}
 
         <div className={"gt-iml-navbar-source-code"}>
           <Button

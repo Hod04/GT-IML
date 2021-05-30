@@ -1,5 +1,5 @@
 import React from "react";
-import { Drawer, Classes, Divider, Tooltip } from "@blueprintjs/core";
+import { Drawer, Classes, Divider, Tooltip, Icon } from "@blueprintjs/core";
 import { SharedTypes } from "../shared/sharedTypes";
 import "../styles/NodeDrawer.css";
 import _ from "lodash";
@@ -11,7 +11,15 @@ import {
 import { DEFAULT_COLOR } from "../helpers/constants";
 import { toggleNodeDrawerActionCreator } from "../actions/actions";
 
-export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDrawer.INodeDrawerProps> {
+export default class NodeDrawer extends React.PureComponent<
+  SharedTypes.NodeDrawer.INodeDrawerProps,
+  { sortedClusters: boolean }
+> {
+  constructor(props: SharedTypes.NodeDrawer.INodeDrawerProps) {
+    super(props);
+    this.state = { sortedClusters: false };
+  }
+
   private dispatch = async (action: SharedTypes.App.IAction): Promise<void> =>
     await this.props.reducer(this.props.store, action);
 
@@ -91,8 +99,8 @@ export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDraw
     </Tooltip>
   );
 
-  private getDistancesTableBody = (): JSX.Element[] =>
-    _.map(
+  private getDistancesTableBody = (): JSX.Element => {
+    const elements: JSX.Element[] = _.map(
       this.props.store.nodeDrawerContent.distances,
       (distanceValue: number, nodeId: string) => {
         const node: SharedTypes.Graph.INode | undefined = _.find(
@@ -108,9 +116,20 @@ export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDraw
         }
 
         const nodeIndex: number = _.indexOf(this.props.nodes, node);
+
         return (
           <tr
-            key={`${this.props.store.nodeDrawerContent.publishedAt}-${nodeId}`}
+            // key={`${this.props.store.nodeDrawerContent.publishedAt}-${nodeId}`}
+            id={
+              this.props.store.clusterLabels[
+                this.props.nodes[nodeIndex]?.clusterId
+              ]
+            }
+            key={`${
+              this.props.store.clusterLabels[
+                this.props.nodes[nodeIndex]?.clusterId
+              ]
+            }-${nodeId}-${this.props.nodes[nodeIndex]?.clusterId}`}
             style={{
               backgroundColor: getColorAccordingToPairwiseDistance(
                 distanceValue
@@ -119,25 +138,44 @@ export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDraw
           >
             <td>
               <div
-                style={{ display: "flex", height: "-webkit-fill-available" }}
+                style={{
+                  backgroundColor: `${this.props.nodes[nodeIndex]?.color}`,
+                  width: 55,
+                  marginRight: 5,
+                  height: 20,
+                  fontSize: "smaller",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  textAlign: "center",
+                }}
               >
-                <div
-                  style={{
-                    backgroundColor: `${this.props.nodes[nodeIndex]?.color}`,
-                    width: 5,
-                    marginRight: 5,
-                    height: 20,
-                  }}
-                />
-                {distanceValue}
+                {
+                  this.props.store.clusterLabels[
+                    this.props.nodes[nodeIndex]?.clusterId
+                  ]
+                }
               </div>
             </td>
+            <td>{distanceValue}</td>
             <td>{this.props.nodes[nodeIndex]?.author}</td>
             <td>{this.props.nodes[nodeIndex]?.text}</td>
           </tr>
         );
       }
     );
+    if (this.state.sortedClusters) {
+      elements.sort((elemA, elemB) => {
+        if (elemA?.props.id == null || elemB?.props.id == null) {
+          return 0;
+        }
+        const idA: string = elemA.props.id as string;
+        const idB: string = elemB.props.id as string;
+        return idA.localeCompare(idB, "en", { sensitivity: "case" });
+      });
+    }
+    return <>{elements}</>;
+  };
 
   render() {
     return (
@@ -174,6 +212,19 @@ export default class NodeDrawer extends React.PureComponent<SharedTypes.NodeDraw
                 <table className={"bp3-html-table bp3-interactive"}>
                   <thead>
                     <tr>
+                      <th style={{ display: "flex", alignItems: "center" }}>
+                        {"Cluster"}
+                        <Icon
+                          style={{ marginLeft: 5, cursor: "pointer" }}
+                          onClick={() =>
+                            this.setState({
+                              sortedClusters: !this.state.sortedClusters,
+                            })
+                          }
+                          icon={"sort"}
+                          iconSize={12}
+                        />
+                      </th>
                       <th>{this.getDistancesTableHeaderAndTooltip()}</th>
                       <th>{"Author"}</th>
                       <th>{"Text"}</th>

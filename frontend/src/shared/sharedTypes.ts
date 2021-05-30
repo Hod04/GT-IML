@@ -18,6 +18,7 @@ export namespace SharedTypes {
       pairwiseClusterDistance: PAIRWISE_CLUSTER_DISTANCE;
       k: number;
       attributeWeightDialogOpen: boolean;
+      clusterLabels: { [cluster: number]: string };
     }
 
     export type IAction =
@@ -31,7 +32,8 @@ export namespace SharedTypes {
       | IToggleShowEdgesAction
       | IToggleShowClusterCentroidsAction
       | IToggleAttributeWeightDialogAction
-      | IToggleDynamicGraphAction;
+      | IToggleDynamicGraphAction
+      | IAssignClusterLabelAction;
 
     export interface IAssignNodesAction {
       type: number;
@@ -86,6 +88,14 @@ export namespace SharedTypes {
     export interface IToggleDynamicGraphAction {
       type: number;
       payload: null;
+    }
+
+    export interface IAssignClusterLabelAction {
+      type: number;
+      payload: {
+        cluster: number;
+        label: string;
+      };
     }
   }
 

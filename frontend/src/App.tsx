@@ -13,6 +13,10 @@ import { SharedTypes } from "./shared/sharedTypes";
 class App extends React.Component<{}, SharedTypes.App.IAppState> {
   constructor(props: {}) {
     super(props);
+    let clusterLabels: { [cluster: number]: string } = {};
+    _.forEach(new Array(15), (val, index) => {
+      clusterLabels[index] = `Cluster ${index}`;
+    });
     this.state = {
       nodes: [],
       clusterNodes: [],
@@ -32,6 +36,7 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
         PAIRWISE_CLUSTER_DISTANCE.PairwisseClusterDistance,
       k: 8,
       attributeWeightDialogOpen: false,
+      clusterLabels,
     };
   }
 
@@ -97,6 +102,18 @@ class App extends React.Component<{}, SharedTypes.App.IAppState> {
           return {
             ...state,
             dynamicGraph: !state.dynamicGraph,
+          };
+
+        case IActionType.ASSIGN_CLUSTER_LABEL:
+          const assignClusterLabelAction: SharedTypes.App.IAssignClusterLabelAction = action as SharedTypes.App.IAssignClusterLabelAction;
+          const clusterLabelsClone: { [cluster: number]: string } = _.clone(
+            state.clusterLabels
+          );
+          clusterLabelsClone[assignClusterLabelAction.payload.cluster] =
+            assignClusterLabelAction.payload.label;
+          return {
+            ...state,
+            clusterLabels: clusterLabelsClone,
           };
 
         default:

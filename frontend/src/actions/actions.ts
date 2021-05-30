@@ -93,3 +93,13 @@ export const toggleDynamicGraphActionCreator = (): SharedTypes.App.IToggleDynami
     payload: null,
   };
 };
+
+export const assignClusterLabelActionCreator = (
+  cluster: number,
+  label: string
+): SharedTypes.App.IAssignClusterLabelAction => {
+  return {
+    type: IActionType.ASSIGN_CLUSTER_LABEL,
+    payload: { cluster, label },
+  };
+};
